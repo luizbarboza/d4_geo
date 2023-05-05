@@ -1,3 +1,7 @@
+[![Dart CI](https://github.com/luizbarboza/d4_geo/actions/workflows/ci.yml/badge.svg)](https://github.com/luizbarboza/d4_geo/actions/workflows/ci.yml)
+[![pub package](https://img.shields.io/pub/v/d4_geo.svg)](https://pub.dev/packages/d4_geo)
+[![package publisher](https://img.shields.io/pub/publisher/d4_geo.svg)](https://pub.dev/packages/d4_geo/publisher)
+
 Geographic projections, spherical shapes and spherical trigonometry.
 
 Map projections are sometimes implemented as point transformations. For
@@ -52,7 +56,7 @@ projection, and the right aspect, for your data. D3 supports a wide variety
 of common and unusual map projections. For more, see Part 2 of
 [The Toolmaker’s Guide](https://vimeo.com/106198518#t=20m0s).
 
-D3 uses [GeoJSON](http://geojson.org/geojson-spec.html) to represent
+D3 uses [GeoJSON](https://geojson.org/geojson-spec.html) to represent
 geographic features in JavaScript. (See also
 [TopoJSON](https://pub.dev/packages/topo), an extension of GeoJSON
 that is significantly more compact and encodes topology.) To convert
