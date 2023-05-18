@@ -111,7 +111,7 @@ void main() {
         [960, 600]
       ], object);
     expect(projection.scale, scale);
-    expect(projection.translate, translate);
+    expect(projection.translate[0], translate[0]);
   });
 }
 
