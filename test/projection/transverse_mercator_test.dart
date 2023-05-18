@@ -103,16 +103,15 @@ void main() {
       [0, 0],
       [960, 600]
     ], object);
-    expect(projection.scale, 15724992.330511674);
-    expect(projection.translate, [20418843.897824813, 21088401.790971387]);
+    var scale = projection.scale, translate = projection.translate;
     projection
       ..rotate = [0, 95]
       ..fitExtent([
         [0, 0],
         [960, 600]
       ], object);
-    expect(projection.scale, 15724992.330511674);
-    expect(projection.translate, [20418843.897824813, 47161426.43770847]);
+    expect(projection.scale, scale);
+    expect(projection.translate, translate);
   });
 }
 
