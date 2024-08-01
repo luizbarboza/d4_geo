@@ -144,7 +144,7 @@ GeoStream Function(GeoStream) geoClipCircle(double angle) {
           point2 = i != null ? i[0] : null;
           if (point2 == null ||
               pointEqual(point0!, point2) ||
-              pointEqual(point1, point2)) point1[2] = 1;
+              pointEqual(point1, point2)) point1.add(1);
         }
         if (v != v0) {
           clean = 0;
