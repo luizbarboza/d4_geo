@@ -10,7 +10,6 @@ export 'distance.dart' show geoDistance;
 export 'graticule.dart' show GeoGraticule, geoGraticule10;
 export 'interpolate.dart' show geoInterpolate;
 export 'length.dart' show geoLength;
-export 'path/context.dart' show GeoPathContext;
 export 'path/path.dart' show GeoPath;
 export 'projection/alber_usa.dart' show GeoAlbersUsa;
 export 'projection/albers.dart' show geoAlbers;
@@ -39,7 +38,7 @@ export 'projection/stereographic.dart'
     show geoStereographic, geoStereographicRaw;
 export 'projection/transverse_mercator.dart'
     show GeoTransverseMercator, geoTransverseMercatorRaw;
-export 'raw.dart' show GeoRawTransform;
+export 'projection/raw.dart' show GeoRawProjection;
 export 'rotation.dart' show GeoRotation;
 export 'stream.dart' show GeoStream;
 export 'transform.dart' show GeoTransform;

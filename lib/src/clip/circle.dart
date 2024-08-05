@@ -12,6 +12,8 @@ import 'line.dart';
 /// [GeoProjection.center].
 ///
 /// Typically used for pre-clipping.
+///
+/// {@category Projections}
 GeoStream Function(GeoStream) geoClipCircle(double angle) {
   final cr = cos(angle),
       delta = 6 * radians,
@@ -23,7 +25,7 @@ GeoStream Function(GeoStream) geoClipCircle(double angle) {
     circleStream(stream, angle, delta, direction, from, to);
   }
 
-  bool visible(List<num> p) => cos(p[0]) * cos(p[1]) > cr;
+  bool visible(num lambda, num phi) => cos(lambda) * cos(phi) > cr;
 
   // Intersects the great circle between a and b with the clip circle.
   List<List<num>>? intersect(List<num> a, List<num> b, bool two) {
@@ -127,10 +129,10 @@ GeoStream Function(GeoStream) geoClipCircle(double angle) {
         v00 = v0 = false;
         clean = 1;
       }
-      ..point = (p) {
-        var lambda = p[0], phi = p[1], point1 = [lambda, phi];
+      ..point = (lambda, phi, [_]) {
+        var point1 = [lambda, phi];
         List<num>? point2;
-        var v = visible(p),
+        var v = visible(lambda, phi),
             c = smallRadius
                 ? v
                     ? 0
@@ -152,11 +154,11 @@ GeoStream Function(GeoStream) geoClipCircle(double angle) {
             // outside going in
             stream.lineStart();
             point2 = intersect(point1, point0!, false)![0];
-            stream.point(point2);
+            stream.point(point2[0], point2[1]);
           } else {
             // inside going out
             point2 = intersect(point0!, point1, false)![0];
-            stream.point([point2[0], point2[1], 2]);
+            stream.point(point2[0], point2[1], 2);
             stream.lineEnd();
           }
           point0 = point2;
@@ -168,19 +170,19 @@ GeoStream Function(GeoStream) geoClipCircle(double angle) {
             clean = 0;
             if (smallRadius) {
               stream.lineStart();
-              stream.point(t![0]);
-              stream.point(t[1]);
+              stream.point(t![0][0], t[0][1]);
+              stream.point(t[1][0], t[1][1]);
               stream.lineEnd();
             } else {
-              stream.point(t![1]);
+              stream.point(t![1][0], t[1][1]);
               stream.lineEnd();
               stream.lineStart();
-              stream.point([t[0][0], t[0][1], 3]);
+              stream.point(t[0][0], t[0][1], 3);
             }
           }
         }
         if (v && (point0 == null || !pointEqual(point0!, point1))) {
-          stream.point(point1);
+          stream.point(point1[0], point1[1]);
         }
         point0 = point1;
         v0 = v;

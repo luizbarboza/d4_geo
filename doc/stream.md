@@ -1,0 +1,3 @@
+Rather than materializing intermediate representations, streams transform geometry through function calls to minimize overhead.
+
+Streams are inherently stateful; the meaning of a [point](https://pub.dev/documentation/d4_geo/latest/d4_geo/GeoStream/point.html) depends on whether the point is inside of a [line](https://pub.dev/documentation/d4_geo/latest/d4_geo/GeoStream/line.html), and likewise a line is distinguished from a ring by a [polygon](https://pub.dev/documentation/d4_geo/latest/d4_geo/GeoStream/polygonStart.html). Despite the name “stream”, these method calls are currently synchronous.

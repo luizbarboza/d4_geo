@@ -1,12 +1,12 @@
 import '../math.dart';
-import '../raw.dart';
+import 'raw.dart';
 
-GeoRawTransform cylindricalEqualAreaRaw(double phi0) {
+GeoRawProjection cylindricalEqualAreaRaw(double phi0) {
   var cosPhi0 = cos(phi0);
 
-  forward(List<num> p) => [p[0] * cosPhi0, sin(p[1]) / cosPhi0];
+  forward(num lambda, num phi, [_]) => [lambda * cosPhi0, sin(phi) / cosPhi0];
 
-  backward(List<num> p) => [p[0] / cosPhi0, asin(p[1] * cosPhi0)];
+  invert(num x, num y, [_]) => [x / cosPhi0, asin(y * cosPhi0)];
 
-  return GeoRawTransform(forward, backward);
+  return GeoRawProjection(forward, invert);
 }

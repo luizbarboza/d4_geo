@@ -1,0 +1,3 @@
+The geographic path generator, [GeoPath](https://pub.dev/documentation/d4_geo/latest/d4_geo/GeoPath-class.html), takes a given GeoJSON geometry or feature object and generates SVG path data string or [renders to a Canvas](https://observablehq.com/@d3/u-s-map-canvas).
+
+Paths can be used with [projections]((https://pub.dev/documentation/d4_geo/latest/topics/Projections-topic.html)) or [transforms](https://pub.dev/documentation/d4_geo/latest/d4_geo/GeoTransform-class.html), or they can be used to render planar geometry directly to Canvas or SVG.

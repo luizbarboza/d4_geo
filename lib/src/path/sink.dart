@@ -2,5 +2,5 @@ import '../stream.dart';
 
 abstract class GeoPathSink extends GeoStream {
   void pointRadius(double radius);
-  Object? result();
+  String? result();
 }

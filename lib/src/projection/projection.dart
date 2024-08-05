@@ -4,27 +4,32 @@ import '../clip/rectangle.dart';
 import '../compose.dart';
 import '../identity.dart';
 import '../math.dart';
-import '../raw.dart';
 import '../rotation.dart';
 import '../stream.dart';
 import '../transform.dart';
 import 'conic_equal_area.dart';
 import 'fit.dart' as fit;
+import 'raw.dart';
 import 'resample.dart';
 
-final _transformRadians = GeoTransform(point: (stream, p) {
-  stream.point([p[0] * radians, p[1] * radians]);
+final _transformRadians = GeoTransform(point: (stream, x, y, [_]) {
+  stream.point(x * radians, y * radians);
 });
 
-GeoTransform _transformRotate(GeoRawTransform rotate) =>
-    GeoTransform(point: (stream, p) => stream.point(rotate.forward(p)));
+GeoTransform _transformRotate(MaybeBijective rotate) =>
+    GeoTransform(point: (stream, x, y, [_]) {
+      final r = rotate.$1(x, y);
+      stream.point(r[0], r[1]);
+    });
 
-GeoRawTransform _scaleTranslate(
+MaybeBijective _scaleTranslate(
         double k, double dx, double dy, int sx, int sy) =>
-    GeoRawTransform((p) => [dx + k * (p[0] * sx), dy - k * (p[1] * sy)],
-        (p) => [(p[0] - dx) / k * sx, (dy - p[1]) / k * sy]);
+    (
+      (x, y, [_]) => [dx + k * (x * sx), dy - k * (y * sy)],
+      (x, y, [_]) => [(x - dx) / k * sx, (dy - y) / k * sy]
+    );
 
-GeoRawTransform _scaleTranslateRotate(
+MaybeBijective _scaleTranslateRotate(
     double k, double dx, double dy, int sx, int sy, double alpha) {
   if (alpha == 0) return _scaleTranslate(k, dx, dy, sx, sy);
   var cosAlpha = cos(alpha),
@@ -35,18 +40,23 @@ GeoRawTransform _scaleTranslateRotate(
       bi = sinAlpha / k,
       ci = (sinAlpha * dy - cosAlpha * dx) / k,
       fi = (sinAlpha * dx + cosAlpha * dy) / k;
-  return GeoRawTransform((p) {
-    final x = p[0] * sx, y = p[1] * sy;
-    return [a * x - b * y + dx, dy - b * x - a * y];
-  }, (p) {
-    final x = p[0], y = p[1];
-    return [sx * (ai * x - bi * y + ci), sy * (fi - bi * x - ai * y)];
-  });
+  return (
+    (x, y, [_]) {
+      x *= sx;
+      y *= sy;
+      return [a * x - b * y + dx, dy - b * x - a * y];
+    },
+    (x, y, [_]) {
+      return [sx * (ai * x - bi * y + ci), sy * (fi - bi * x - ai * y)];
+    }
+  );
 }
 
 /// A projection wrapper to mutate as needed.
-class GeoProjectionMutator<T> {
-  final GeoRawTransform Function(T) _projectAt;
+///
+/// {@category Projections}
+class GeoProjectionMutator {
+  final GeoRawProjection Function([List?]) _projectAt;
   final GeoProjection _projection;
 
   /// Constructs a new projection from the specified raw transform [factory] and
@@ -58,8 +68,8 @@ class GeoProjectionMutator<T> {
   /// [geoConicEqualAreaRaw], would have the form:
   ///
   /// ```dart
-  ///   // y0 and y1 represent two parallels
-  ///   GeoRawTransform conicFactory(phi) => GeoRawTransform((p) => [..., ...]);
+  /// // y[0] and y[1] represent two parallels
+  /// GeoRawProjection conicFactory([y]) => GeoRawProjection((lambda, phi) => [..., ...]);
   /// ```
   ///
   /// Using [GeoProjectionMutator], you can implement a standard projection that
@@ -67,49 +77,50 @@ class GeoProjectionMutator<T> {
   /// internally by [GeoProjection]:
   ///
   /// ```dart
-  ///   class ConicCustom extends GeoProjection {
-  ///     double phi0, phi1;
-  ///     late GeoProjectionMutator mutate;
+  /// class ConicCustom extends GeoProjection {
+  ///   double _phi0, _phi1;
+  ///   late GeoProjectionMutator mutate;
   ///
-  ///     factory ConicCustom() => ConicCustom._(29.5, 45.5);
+  ///   factory ConicCustom() => ConicCustom._(29.5, 45.5);
   ///
-  ///     ConicCustom._(this.phi0, this.phi1)
-  ///         : super(conicFactory([phi0, phi1])) {
-  ///       mutate = GeoProjectionMutator(conicFactory, this);
-  ///     }
-  ///
-  ///     List<double> get parallels => [_phi0, _phi1];
-  ///     set parallels(List<double> _) => _m([_phi0 = _, _phi1 = _]);
+  ///   ConicCustom._(this.phi0, this.phi1)
+  ///       : super(conicFactory([_phi0, _phi1])) {
+  ///     mutate = GeoProjectionMutator(conicFactory, this);
   ///   }
+  ///
+  ///   List<double> get parallels => [_phi0, _phi1];
+  ///   set parallels(List<double> _) => mutate([_phi0 = _[0], _phi1 = _[1]]);
+  /// }
   /// ```
   ///
   /// When creating a mutable projection, the mutate function is typically not
   /// exposed.
   GeoProjectionMutator(
-      GeoRawTransform Function(T) factory, GeoProjection projection)
+      GeoRawProjection Function([List?]) factory, GeoProjection projection)
       : _projectAt = factory,
         _projection = projection;
 
-  call(T x) {
-    _projection._project = _projectAt(x);
-    return _projection._recenter();
+  void call([List? arguments]) {
+    _projection._project = _projectAt(arguments);
+    _projection._recenter();
   }
 }
 
 /// Projections transform spherical polygonal geometry to planar polygonal
 /// geometry.
 ///
-/// D3 provides implementations of several classes of standard projections:
+/// D4 provides implementations of several classes of standard projections:
 ///
-/// * Azimuthal
-/// * Composite
-/// * Conic
-/// * Cylindrical
+/// * [Azimuthal projections](https://pub.dev/documentation/d4_geo/latest/topics/Azimuthal%20projections-topic.html)
+/// * [Conic projections](https://pub.dev/documentation/d4_geo/latest/topics/Conic%20projections-topic.html)
+/// * [Cylindrical projections](https://pub.dev/documentation/d4_geo/latest/topics/Cylindrical%20projections-topic.html)
 ///
 /// You can implement custom projections using [GeoProjection] or
 /// [GeoProjectionMutator].
-class GeoProjection implements GeoRawTransform, GeoTransform {
-  GeoRawTransform _project;
+///
+/// {@category Projections}
+class GeoProjection implements GeoTransform {
+  GeoRawProjection _project;
   double _k = 150, // scale
       _x = 480,
       _y = 250, // translate
@@ -127,59 +138,55 @@ class GeoProjection implements GeoRawTransform, GeoTransform {
   GeoStream Function(GeoStream) _postclip = identity;
   double _delta2 = 0.5; // precision
   late GeoStream Function(GeoStream) _projectResample;
-  late GeoRawTransform _rotate, _projectTransform, _projectRotateTransform;
+  late MaybeBijective _rotate, _projectTransform, _projectRotateTransform;
   GeoStream? _cache, _cacheStream;
 
   /// Constructs a new projection from the specified raw projection, [project].
-  /// The [project] forward function takes the *longitude* and *latitude* of a
-  /// given point in [radians](http://mathworld.wolfram.com/Radian.html), often
-  /// referred to as *lambda* (λ) and *phi* (φ), and returns a two-element array
-  /// \[*x*, *y*\] representing its unit projection. The [project] forward
-  /// function does not need to scale or translate the point, as these are
-  /// applied automatically by [scale], [translate], and [center]. Likewise, the
-  /// [project] forward function does not need to perform any spherical
-  /// rotation, as [rotate] is applied prior to projection.
+  /// The [project] function takes the *longitude* and *latitude* of a given
+  /// point in [radians](http://mathworld.wolfram.com/Radian.html), often
+  /// referred to as *lambda* (λ) and *phi* (φ), and returns a two-element list
+  /// \[*x*, *y*\] representing its unit projection. The [project] function does
+  /// not need to scale or translate the point, as these are applied
+  /// automatically by [scale], [translate], and [center]. Likewise, the
+  /// [project] function does not need to perform any spherical rotation, as
+  /// [rotate] is applied prior to projection.
   ///
   /// For example, a spherical Mercator projection can be implemented as:
   ///
   /// ```dart
-  ///   var mercator = GeoProjection(GeoRawTransform((p) {
-  ///     return [p[0], log(tan(pi / 4 + p[1] / 2))];
-  ///   }));
+  /// var mercator = GeoProjection(GeoRawProjection((x, y) {
+  ///   return [x, log(tan(pi / 4 + y / 2))];
+  /// }));
   /// ```
   ///
-  /// If the [project] raw transform has a non-null backward function, the
-  /// returned projection will also have non-null [backward].
-  GeoProjection(GeoRawTransform project) : _project = project {
+  /// If the [project]'s invert function returns a non-null value, the [invert]
+  /// function also returns a non-null value
+  GeoProjection(GeoRawProjection project) : _project = project {
     _recenter();
   }
 
-  /// Returns a new array \[*x*, *y*\] (typically in pixels) representing the
-  /// projected point of the given *point*.
+  /// Returns a new list \[*x*, *y*\] (typically in pixels) representing the
+  /// projected point of the given [point].
   ///
-  /// The point must be specified as a two-element array
-  /// \[*longitude*, *latitude*\] in degrees. May return a two-element array
-  /// filled with [double.nan] if the specified *point* has no defined projected
+  /// The point must be specified as a two-element list
+  /// \[*longitude*, *latitude*\] in degrees. May return a two-element list
+  /// filled with [double.nan] if the specified [point] has no defined projected
   /// position, such as when the point is outside the clipping bounds of the
   /// projection.
-  @override
-  get forward =>
-      (p) => _projectRotateTransform.forward([p[0] * radians, p[1] * radians]);
+  List<num>? call(List<num> point) =>
+      _projectRotateTransform.$1(point[0] * radians, point[1] * radians);
 
-  /// Returns a new array \[*longitude*, *latitude*\] in degrees representing
-  /// the unprojected point of the given projected *point*.
+  /// Returns a new list \[*longitude*, *latitude*\] in degrees representing
+  /// the unprojected point of the given projected [point].
   ///
-  /// The point must be specified as a two-element array \[*x*, *y*\] (typically
-  /// in pixels). May return a two-element array filled with [double.nan] if the
-  /// specified *point* has no defined projected position, such as when the
-  /// point is outside the clipping bounds of the projection.
-  @override
-  get backward => _project.backward != null
-      ? (p) {
-          var l = _projectRotateTransform.backward!(p);
-          return [l[0] * degrees, l[1] * degrees];
-        }
-      : null;
+  /// The point must be specified as a two-element list \[*x*, *y*\] (typically
+  /// in pixels). May return null if the specified [point] has no defined
+  /// projected position, such as when the point is outside the clipping bounds
+  /// of the projection.
+  List<num>? invert(List<num> point) {
+    final p = _projectRotateTransform.$2(point[0], point[1]);
+    return p != null ? [p[0] * degrees, p[1] * degrees] : null;
+  }
 
   /// Returns a projection stream for the specified [stream].
   ///
@@ -189,23 +196,23 @@ class GeoProjection implements GeoRawTransform, GeoTransform {
   /// clipped to the small circle or cut along the antimeridian, and lastly
   /// projected to the plane with adaptive resampling, scale and translation.
   @override
-  GeoStream call(GeoStream stream) => _cache != null && _cacheStream == stream
+  GeoStream stream(GeoStream stream) => _cache != null && _cacheStream == stream
       ? _cache!
-      : _cache = _transformRadians(_transformRotate(_rotate)(
-          preclip(_projectResample(postclip(_cacheStream = stream)))));
+      : _cache = _transformRadians.stream(_transformRotate(_rotate)
+          .stream(preclip(_projectResample(postclip(_cacheStream = stream)))));
 
   /// The projection's spherical clipping.
   GeoStream Function(GeoStream) get preclip => _preclip;
-  set preclip(GeoStream Function(GeoStream) _) {
-    _preclip = _;
+  set preclip(GeoStream Function(GeoStream) preclip) {
+    _preclip = preclip;
     _theta = null;
     _reset();
   }
 
   /// The projection's cartesian clipping.
   GeoStream Function(GeoStream) get postclip => _postclip;
-  set postclip(GeoStream Function(GeoStream) _) {
-    _postclip = _;
+  set postclip(GeoStream Function(GeoStream) postclip) {
+    _postclip = postclip;
     _x0 = _y0 = _x1 = _y1 = null;
     _reset();
   }
@@ -219,9 +226,9 @@ class GeoProjection implements GeoRawTransform, GeoTransform {
   ///
   /// See also [preclip], [geoClipAntimeridian], [geoClipCircle].
   double? get clipAngle => _theta == null ? null : _theta! * degrees;
-  set clipAngle(double? _) {
-    if (_ != null && _ > 0) {
-      preclip = geoClipCircle(_theta = _ * radians);
+  set clipAngle(double? clipAngle) {
+    if (clipAngle != null && clipAngle > 0) {
+      preclip = geoClipCircle(_theta = clipAngle * radians);
     } else {
       _theta = null;
       preclip = geoClipAntimeridian;
@@ -244,14 +251,17 @@ class GeoProjection implements GeoRawTransform, GeoTransform {
           [_x0!, _y0!],
           [_x1!, _y1!]
         ];
-  set clipExtent(List<List<double>>? _) {
-    if (_ == null) {
+  set clipExtent(List<List<double>>? clipExtent) {
+    if (clipExtent == null) {
       _x0 = _y0 = _x1 = _y1 = null;
       _postclip = identity;
       return;
     } else {
       _postclip = geoClipRectangle(
-          _x0 = _[0][0], _y0 = _[0][1], _x1 = _[1][0], _y1 = _[1][1]);
+          _x0 = clipExtent[0][0],
+          _y0 = clipExtent[0][1],
+          _x1 = clipExtent[1][0],
+          _y1 = clipExtent[1][1]);
     }
     _reset();
   }
@@ -262,8 +272,8 @@ class GeoProjection implements GeoRawTransform, GeoTransform {
   /// points; however, absolute scale factors are not equivalent across
   /// projections. The default scale factor is projection-specific.
   double get scale => _k;
-  set scale(double _) {
-    _k = _;
+  set scale(double scale) {
+    _k = scale;
     _recenter();
   }
 
@@ -274,9 +284,9 @@ class GeoProjection implements GeoRawTransform, GeoTransform {
   /// [center]. The default translation offset places ⟨0°,0°⟩ at the center of a
   /// 960×500 area.
   List<double> get translate => [_x, _y];
-  set translate(List<double> _) {
-    _x = _[0];
-    _y = _[1];
+  set translate(List<double> translate) {
+    _x = translate[0];
+    _y = translate[1];
     _recenter();
   }
 
@@ -285,9 +295,9 @@ class GeoProjection implements GeoRawTransform, GeoTransform {
   /// A two-element array of \[*longitude*, *latitude*\] in degrees. Defaults to
   /// ⟨0°,0°⟩.
   List<double> get center => [_lambda * degrees, _phi * degrees];
-  set center(List<double> _) {
-    _lambda = _[0].remainder(360) * radians;
-    _phi = _[1].remainder(360) * radians;
+  set center(List<double> center) {
+    _lambda = center[0].remainder(360) * radians;
+    _phi = center[1].remainder(360) * radians;
     _recenter();
   }
 
@@ -304,10 +314,10 @@ class GeoProjection implements GeoRawTransform, GeoTransform {
   /// See also [GeoRotation]. The default for rotation angles is \[0, 0, 0\].
   List<double> get rotate =>
       [_deltaLambda * degrees, _deltaPhi * degrees, _deltaGamma * degrees];
-  set rotate(List<double> _) {
-    _deltaLambda = _[0].remainder(360) * radians;
-    _deltaPhi = _[1].remainder(360) * radians;
-    _deltaGamma = _.length > 2 ? _[2].remainder(360) * radians : 0;
+  set rotate(List<double> rotate) {
+    _deltaLambda = rotate[0].remainder(360) * radians;
+    _deltaPhi = rotate[1].remainder(360) * radians;
+    _deltaGamma = rotate.length > 2 ? rotate[2].remainder(360) * radians : 0;
     _recenter();
   }
 
@@ -318,8 +328,8 @@ class GeoProjection implements GeoRawTransform, GeoTransform {
   /// [*context*.rotate](https://developer.mozilla.org/docs/Web/API/CanvasRenderingContext2D/rotate))
   /// rather than during projection.
   double get angle => _alpha * degrees;
-  set angle(double _) {
-    _alpha = _.remainder(360) * radians;
+  set angle(double angle) {
+    _alpha = angle.remainder(360) * radians;
     _recenter();
   }
 
@@ -330,8 +340,8 @@ class GeoProjection implements GeoRawTransform, GeoTransform {
   /// astronomical data with the orb seen from below: right ascension (eastern
   /// direction) will point to the left when North is pointing up.
   bool get reflectX => _sx < 0;
-  set reflectX(bool _) {
-    _sx = _ ? -1 : 1;
+  set reflectX(bool reflectX) {
+    _sx = reflectX ? -1 : 1;
     _recenter();
   }
 
@@ -345,8 +355,8 @@ class GeoProjection implements GeoRawTransform, GeoTransform {
   /// y as pointing up, to display coordinate systems such as Canvas and SVG,
   /// which treat positive y as pointing down.
   bool get reflectY => _sy < 0;
-  set reflectY(bool _) {
-    _sy = _ ? -1 : 1;
+  set reflectY(bool reflectY) {
+    _sy = reflectY ? -1 : 1;
     _recenter();
   }
 
@@ -358,8 +368,9 @@ class GeoProjection implements GeoRawTransform, GeoTransform {
   /// [Douglas–Peucker](https://en.wikipedia.org/wiki/Ramer%E2%80%93Douglas%E2%80%93Peucker_algorithm)
   /// distance. Defailts to √0.5 ≅ 0.70710…
   double get precision => sqrt(_delta2);
-  set precision(double _) {
-    _projectResample = resample(_projectTransform, _delta2 = _ * _);
+  set precision(double precision) {
+    _projectResample =
+        resample(_projectTransform, _delta2 = precision * precision);
     _reset();
   }
 
@@ -376,12 +387,12 @@ class GeoProjection implements GeoRawTransform, GeoTransform {
   /// pixels of padding on each side:
   ///
   /// ```dart
-  ///   var projection = GeoTransverseMercator()
-  ///     ..rotate = [74 + 30 / 60, -38 - 50 / 60]
-  ///     ..fitExtent([
-  ///       [20, 20],
-  ///       [940, 480]
-  ///     ], nj);
+  /// var projection = GeoTransverseMercator()
+  ///   ..rotate = [74 + 30 / 60, -38 - 50 / 60]
+  ///   ..fitExtent([
+  ///     [20, 20],
+  ///     [940, 480]
+  ///   ], nj);
   /// ```
   ///
   /// Any [clipExtent] is ignored when determining the new scale and translate.
@@ -397,11 +408,11 @@ class GeoProjection implements GeoRawTransform, GeoTransform {
   /// The following two statements are equivalent:
   ///
   /// ```dart
-  ///   projection.fitExtent([
-  ///     [0, 0],
-  ///     [width, height]
-  ///   ], object);
-  ///   projection.fitSize([width, height], object);
+  /// projection.fitExtent([
+  ///   [0, 0],
+  ///   [width, height]
+  /// ], object);
+  /// projection.fitSize([width, height], object);
   /// ```
   void fitSize(List<double> size, Map object) {
     fit.size(this, size, object);
@@ -421,12 +432,16 @@ class GeoProjection implements GeoRawTransform, GeoTransform {
   }
 
   void _recenter() {
-    var center = _scaleTranslateRotate(_k, 0, 0, _sx, _sy, _alpha)
-        .forward(_project.forward([_lambda, _phi]));
-    var transform = _scaleTranslateRotate(
-        _k, _x - center[0], _y - center[1], _sx, _sy, _alpha);
+    final p = _project.call(_lambda, _phi),
+        center =
+            _scaleTranslateRotate(_k, 0, 0, _sx, _sy, _alpha).$1(p[0], p[1]),
+        transform = _scaleTranslateRotate(
+            _k, _x - center[0], _y - center[1], _sx, _sy, _alpha);
     _rotate = rotateRadians(_deltaLambda, _deltaPhi, _deltaGamma);
-    _projectTransform = compose(_project, transform);
+    _projectTransform = compose((
+      (x, y, [_]) => _project.project(x, y),
+      (x, y, [_]) => _project.projectInvert(x, y)
+    ), transform);
     _projectRotateTransform = compose(_rotate, _projectTransform);
     _projectResample = resample(_projectTransform, _delta2);
   }

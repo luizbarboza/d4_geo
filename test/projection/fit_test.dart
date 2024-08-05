@@ -238,7 +238,7 @@ void main() {
 
   test("projection.fitExtent(…) custom projection", () {
     final projection =
-        GeoProjection(GeoRawTransform((p) => [p[0], pow(p[1], 3)]))
+        GeoProjection(GeoRawProjection((x, y, [_]) => [x, pow(y, 3)]))
           ..fitExtent([
             [50, 50],
             [950, 950]

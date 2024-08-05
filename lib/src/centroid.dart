@@ -5,11 +5,13 @@ import 'stream.dart';
 
 late double _w0, _w1, _x0, _y0, _z0, _x1, _y1, _z1;
 late Adder _x2, _y2, _z2;
-late List<num> _p00; // first point
+late num _lambda00, _phi00; // first point
 late double __x0, __y0, __z0; // previous point
 
-void _centroidPoint(List<num> p) {
-  var lambda = p[0] * radians, phi = p[1] * radians, cosPhi = cos(phi);
+void _centroidPoint(num lambda, num phi, [_]) {
+  lambda *= radians;
+  phi *= radians;
+  var cosPhi = cos(phi);
   _centroidPointCartesian(cosPhi * cos(lambda), cosPhi * sin(lambda), sin(phi));
 }
 
@@ -24,8 +26,10 @@ void _centroidLineStart() {
   _centroidStream.point = _centroidLinePointFirst;
 }
 
-void _centroidLinePointFirst(List<num> p) {
-  var lambda = p[0] * radians, phi = p[1] * radians, cosPhi = cos(phi);
+void _centroidLinePointFirst(num lambda, num phi, [_]) {
+  lambda *= radians;
+  phi *= radians;
+  var cosPhi = cos(phi);
   __x0 = cosPhi * cos(lambda);
   __y0 = cosPhi * sin(lambda);
   __z0 = sin(phi);
@@ -33,10 +37,10 @@ void _centroidLinePointFirst(List<num> p) {
   _centroidPointCartesian(__x0, __y0, __z0);
 }
 
-void _centroidLinePoint(List<num> p) {
-  double lambda = p[0] * radians,
-      phi = p[1] * radians,
-      cosPhi = cos(phi),
+void _centroidLinePoint(num lambda, num phi, [_]) {
+  lambda *= radians;
+  phi *= radians;
+  var cosPhi = cos(phi),
       x = cosPhi * cos(lambda),
       y = cosPhi * sin(lambda),
       z = sin(phi),
@@ -64,24 +68,27 @@ void _centroidRingStart() {
 }
 
 void _centroidRingEnd() {
-  _centroidRingPoint(_p00);
+  _centroidRingPoint(_lambda00, _phi00);
   _centroidStream.point = _centroidPoint;
 }
 
-void _centroidRingPointFirst(List<num> p) {
-  _p00 = p;
+void _centroidRingPointFirst(num lambda, num phi, [_]) {
+  _lambda00 = lambda;
+  _phi00 = phi;
+  lambda *= radians;
+  phi *= radians;
   _centroidStream.point = _centroidRingPoint;
-  var lambda = p[0] * radians, phi = p[1] * radians, cosPhi = cos(phi);
+  var cosPhi = cos(phi);
   __x0 = cosPhi * cos(lambda);
   __y0 = cosPhi * sin(lambda);
   __z0 = sin(phi);
   _centroidPointCartesian(__x0, __y0, __z0);
 }
 
-void _centroidRingPoint(List<num> p) {
-  var lambda = p[0] * radians,
-      phi = p[1] * radians,
-      cosPhi = cos(phi),
+void _centroidRingPoint(num lambda, num phi, [_]) {
+  lambda *= radians;
+  phi *= radians;
+  var cosPhi = cos(phi),
       x = cosPhi * cos(lambda),
       y = cosPhi * sin(lambda),
       z = sin(phi),
@@ -117,6 +124,8 @@ GeoStream _centroidStream = GeoStream(
 /// Returns the spherical centroid of the specified GeoJSON [object].
 ///
 /// This is the spherical equivalent of [GeoPath.centroid].
+///
+/// {@category Spherical math}
 List<double> geoCentroid(Map object) {
   _w0 = _w1 = _x0 = _y0 = _z0 = _x1 = _y1 = _z1 = 0;
   _x2 = Adder();

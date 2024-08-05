@@ -5,7 +5,7 @@ import 'path/path.dart';
 import 'stream.dart';
 
 Adder _areaSum = Adder(), areaRingSum = Adder();
-late List<num> _p00;
+late num _lambda00, _phi00;
 late num _lambda0, _cosPhi0, _sinPhi0;
 
 void _areaRingStart() {
@@ -13,20 +13,23 @@ void _areaRingStart() {
 }
 
 void _areaRingEnd() {
-  _areaPoint(_p00);
+  _areaPoint(_lambda00, _phi00);
 }
 
-void _areaPointFirst(List<num> p) {
+void _areaPointFirst(num lambda, num phi, [_]) {
   areaStream.point = _areaPoint;
-  _p00 = p;
-  var lambda = p[0] * radians, phi = p[1] * radians;
+  _lambda00 = lambda;
+  _phi00 = phi;
+  lambda *= radians;
+  phi *= radians;
   _lambda0 = lambda;
   _cosPhi0 = cos(phi = phi / 2 + quarterPi);
   _sinPhi0 = sin(phi);
 }
 
-void _areaPoint(List<num> p) {
-  var lambda = p[0] * radians, phi = p[1] * radians;
+void _areaPoint(num lambda, num phi, [_]) {
+  lambda *= radians;
+  phi *= radians;
   phi = phi / 2 + quarterPi; // half the angular distance from south pole
 
   // Spherical excess E for a spherical triangle with vertices: south pole,
@@ -64,6 +67,8 @@ GeoStream areaStream = GeoStream(polygonStart: () {
 /// [steradians](https://en.wikipedia.org/wiki/Steradian).
 ///
 /// This is the spherical equivalent of [GeoPath.area].
+///
+/// {@category Spherical math}
 double geoArea(Map object) {
   _areaSum = Adder();
   areaStream(object);

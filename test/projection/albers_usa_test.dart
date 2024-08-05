@@ -31,7 +31,6 @@ void main() {
       [-157.8583, 21.3069],
       [298.5, 451.0]
     ], projectionEqual); // Honolulu, HI
-    expect(
-        albersUsa.forward([2.3522, 48.8566]), [isNaN, isNaN]); // Paris, France
+    expect(albersUsa.call([2.3522, 48.8566]), [isNaN, isNaN]); // Paris, France
   });
 }

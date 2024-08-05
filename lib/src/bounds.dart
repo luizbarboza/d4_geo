@@ -7,23 +7,20 @@ import 'stream.dart';
 
 late num _lambda0, _phi0, _lambda1, _phi1; // bounds
 late num _lambda2; // previous lambda-coordinate
-late List<num> _p00; // first point
+late num _lambda00, _phi00; // first point
 List<double>? _p0;
 late Adder _deltaSum;
 List<List<num>>? _ranges;
 List<num>? _range;
 
-void _boundsPoint(List<num> p) {
-  var lambda = p[0], phi = p[1];
+void _boundsPoint(num lambda, num phi, [_]) {
   _ranges!.add(_range = [_lambda0 = lambda, _lambda1 = lambda]);
   if (phi < _phi0) _phi0 = phi;
   if (phi > _phi1) _phi1 = phi;
 }
 
-void _linePoint(List<num> s) {
-  var lambda = s[0],
-      phi = s[1],
-      p = cartesian([lambda * radians, phi * radians]);
+void _linePoint(num lambda, num phi, [_]) {
+  var p = cartesian([lambda * radians, phi * radians]);
   if (_p0 != null) {
     var normal = cartesianCross(_p0!, p),
         equatorial = [normal[1], -normal[0], 0.0],
@@ -93,16 +90,17 @@ void _boundsLineEnd() {
   _p0 = null;
 }
 
-void _boundsRingPoint(List<num> p) {
+void _boundsRingPoint(num lambda, num phi, [_]) {
   if (_p0 != null) {
-    var delta = p[0] - _lambda2;
+    var delta = lambda - _lambda2;
     _deltaSum.add(
         abs(delta) > 180 ? delta + (delta > 0 ? 360 : -360) : delta.toDouble());
   } else {
-    _p00 = p;
+    _lambda00 = lambda;
+    _phi00 = phi;
   }
-  areaStream.point(p);
-  _linePoint(p);
+  areaStream.point(lambda, phi);
+  _linePoint(lambda, phi);
 }
 
 void _boundsRingStart() {
@@ -110,7 +108,7 @@ void _boundsRingStart() {
 }
 
 void _boundsRingEnd() {
-  _boundsRingPoint(_p00);
+  _boundsRingPoint(_lambda00, _phi00);
   areaStream.lineEnd();
   if (abs(_deltaSum.valueOf()) > epsilon) _lambda0 = -(_lambda1 = 180);
   _range?[0] = _lambda0;
@@ -173,6 +171,8 @@ GeoStream _boundsStream = GeoStream(
 /// projected planar coordinates, the minimum latitude is typically the maximum
 /// *y*-value, and the maximum latitude is typically the minimum *y*-value.)
 /// This is the spherical equivalent of [GeoPath.bounds].
+///
+/// {@category Spherical math}
 List<List<num>> geoBounds(Map object) {
   int i, n;
   List<num> a, b;

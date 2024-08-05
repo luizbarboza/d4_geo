@@ -1,0 +1,1 @@
+Azimuthal projections project the sphere directly onto a plane.

@@ -1,11 +1,11 @@
 import '../math.dart';
-import '../raw.dart';
+import 'raw.dart';
 import 'projection.dart';
 
-List<double> _forward(List<num> p) {
-  var phi = p[1], phi2 = phi * phi, phi4 = phi2 * phi2;
+List<double> _naturalEarth1Raw(num lambda, num phi, [_]) {
+  var phi2 = phi * phi, phi4 = phi2 * phi2;
   return [
-    p[0] *
+    lambda *
         (0.8707 -
             0.131979 * phi2 +
             phi4 * (-0.013791 + phi4 * (0.003971 * phi2 - 0.001529 * phi4))),
@@ -17,8 +17,8 @@ List<double> _forward(List<num> p) {
   ];
 }
 
-List<num> _backward(List<num> p) {
-  var y = p[1], phi = y, i = 25;
+List<num> _naturalEarth1Invert(num x, num y, [_]) {
+  var phi = y, i = 25;
   double delta;
   num phi2, phi4;
   do {
@@ -42,7 +42,7 @@ List<num> _backward(List<num> p) {
                             0.005916 * 11 * phi4)));
   } while (abs(delta) > epsilon && --i > 0);
   return [
-    p[0] /
+    x /
         (0.8707 +
             (phi2 = phi * phi) *
                 (-0.131979 +
@@ -57,12 +57,19 @@ List<num> _backward(List<num> p) {
 }
 
 /// The raw [Natural Earth projection](http://www.shadedrelief.com/NE_proj/).
-const geoNaturalEarth1Raw = GeoRawTransform(_forward, _backward);
+///
+/// {@category Projections}
+/// {@category Cylindrical projections}
+const geoNaturalEarth1Raw =
+    GeoRawProjection(_naturalEarth1Raw, _naturalEarth1Invert);
 
 /// The [Natural Earth projection](http://www.shadedrelief.com/NE_proj/) is a
 /// pseudocylindrical projection designed by Tom Patterson.
 ///
 /// It is neither conformal nor equal-area, but appealing to the eye for
 /// small-scale maps of the whole world.
+///
+/// {@category Projections}
+/// {@category Cylindrical projections}
 GeoProjection geoNaturalEarth1() =>
     GeoProjection(geoNaturalEarth1Raw)..scale = 175.295;

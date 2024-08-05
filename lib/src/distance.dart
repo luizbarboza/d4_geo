@@ -11,6 +11,8 @@ Map _object = {"type": "LineString", "coordinates": _coordinates};
 /// Each point must be specified as a two-element array \[*longitude*,
 /// *latitude*\] in degrees. This is the spherical equivalent of
 /// [GeoPath.measure] given a LineString of two points.
+///
+/// {@category Spherical math}
 double geoDistance(List<num> a, List<num> b) {
   _coordinates[0] = a;
   _coordinates[1] = b;

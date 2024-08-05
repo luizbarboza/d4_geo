@@ -14,6 +14,8 @@ List<List<double>> Function(double) _graticuleY(
 }
 
 /// A geometry geographic generator for creating graticules.
+///
+/// {@category Spherical shapes}
 class GeoGraticule {
   late double _x1 = 180,
       _x0 = -_x1,
@@ -189,8 +191,10 @@ class GeoGraticule {
 /// Equivalent to:
 ///
 /// ```dart
-///   geoGraticule10() {
-///     return GeoGraticule()();
-///   }
+/// geoGraticule10() {
+///   return GeoGraticule()();
+/// }
 /// ```
+///
+/// {@category Spherical shapes}
 Map geoGraticule10() => GeoGraticule()();

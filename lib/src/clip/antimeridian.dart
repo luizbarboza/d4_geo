@@ -7,7 +7,9 @@ import 'line.dart';
 /// polygons) that cross the antimeridian line are cut in two, one on each side.
 ///
 /// Typically used for pre-clipping.
-final geoClipAntimeridian = clip((_) => true, _clipAntimeridianLine,
+///
+/// {@category Projections}
+final geoClipAntimeridian = clip((_, __) => true, _clipAntimeridianLine,
     _clipAntimeridianInterpolate, [-pi, -halfPi]);
 
 // Takes a line and cuts into visible segments. Return values: 0 - there were
@@ -28,20 +30,16 @@ ClipLine _clipAntimeridianLine(GeoStream stream) {
       stream.lineStart();
       clean = 1;
     }
-    ..point = (p) {
-      var lambda1 = p[0],
-          phi1 = p[1],
-          sign1 = lambda1 > 0 ? pi : -pi,
-          delta = abs(lambda1 - lambda0);
+    ..point = (lambda1, phi1, [_]) {
+      var sign1 = lambda1 > 0 ? pi : -pi, delta = abs(lambda1 - lambda0);
       if (abs(delta - pi) < epsilon) {
         // line crosses a pole
-        stream
-            .point([lambda0, phi0 = (phi0 + phi1) / 2 > 0 ? halfPi : -halfPi]);
-        stream.point([sign0, phi0]);
+        stream.point(lambda0, phi0 = (phi0 + phi1) / 2 > 0 ? halfPi : -halfPi);
+        stream.point(sign0, phi0);
         stream.lineEnd();
         stream.lineStart();
-        stream.point([sign1, phi0]);
-        stream.point([lambda1, phi0]);
+        stream.point(sign1, phi0);
+        stream.point(lambda1, phi0);
         clean = 0;
       } else if (sign0 != sign1 && delta >= pi) {
         // line crosses antimeridian
@@ -50,13 +48,13 @@ ClipLine _clipAntimeridianLine(GeoStream stream) {
         } // handle degeneracies
         if (abs(lambda1 - sign1) < epsilon) lambda1 -= sign1 * epsilon;
         phi0 = _clipAntimeridianIntersect(lambda0, phi0, lambda1, phi1);
-        stream.point([sign0, phi0]);
+        stream.point(sign0, phi0);
         stream.lineEnd();
         stream.lineStart();
-        stream.point([sign1, phi0]);
+        stream.point(sign1, phi0);
         clean = 0;
       }
-      stream.point([lambda0 = lambda1, phi0 = phi1]);
+      stream.point(lambda0 = lambda1, phi0 = phi1);
       sign0 = sign1;
     }
     ..lineEnd = () {
@@ -84,22 +82,22 @@ void _clipAntimeridianInterpolate(
   double phi;
   if (from == null) {
     phi = direction * halfPi;
-    stream.point([-pi, phi]);
-    stream.point([0, phi]);
-    stream.point([pi, phi]);
-    stream.point([pi, 0]);
-    stream.point([pi, -phi]);
-    stream.point([0, -phi]);
-    stream.point([-pi, -phi]);
-    stream.point([-pi, 0]);
-    stream.point([-pi, phi]);
+    stream.point(-pi, phi);
+    stream.point(0, phi);
+    stream.point(pi, phi);
+    stream.point(pi, 0);
+    stream.point(pi, -phi);
+    stream.point(0, -phi);
+    stream.point(-pi, -phi);
+    stream.point(-pi, 0);
+    stream.point(-pi, phi);
   } else if (abs(from[0] - to![0]) > epsilon) {
     var lambda = from[0] < to[0] ? pi : -pi;
     phi = direction * lambda / 2;
-    stream.point([-lambda, phi]);
-    stream.point([0, phi]);
-    stream.point([lambda, phi]);
+    stream.point(-lambda, phi);
+    stream.point(0, phi);
+    stream.point(lambda, phi);
   } else {
-    stream.point(to);
+    stream.point(to[0], to[1]);
   }
 }

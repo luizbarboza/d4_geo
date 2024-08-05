@@ -29,9 +29,9 @@ GeoStream _centroidStream = GeoStream(
       _centroidStream.lineEnd = _centroidLineEnd;
     });
 
-void _centroidPoint(List<num> p) {
-  _x0 += p[0];
-  _y0 += p[1];
+void _centroidPoint(num x, num y, [_]) {
+  _x0 += x;
+  _y0 += y;
   ++_z0;
 }
 
@@ -39,21 +39,17 @@ void _centroidLineStart() {
   _centroidStream.point = _centroidPointFirstLine;
 }
 
-void _centroidPointFirstLine(List<num> p) {
+void _centroidPointFirstLine(num x, num y, [_]) {
   _centroidStream.point = _centroidPointLine;
-  _centroidPoint([__x0 = p[0], __y0 = p[1]]);
+  _centroidPoint(__x0 = x, __y0 = y);
 }
 
-void _centroidPointLine(List<num> p) {
-  var x = p[0],
-      y = p[1],
-      dx = x - __x0,
-      dy = y - __y0,
-      z = sqrt(dx * dx + dy * dy);
+void _centroidPointLine(num x, num y, [_]) {
+  var dx = x - __x0, dy = y - __y0, z = sqrt(dx * dx + dy * dy);
   _x1 += z * (__x0 + x) / 2;
   _y1 += z * (__y0 + y) / 2;
   _z1 += z;
-  _centroidPoint([__x0 = x, __y0 = y]);
+  _centroidPoint(__x0 = x, __y0 = y);
 }
 
 void _centroidLineEnd() {
@@ -65,20 +61,16 @@ void _centroidRingStart() {
 }
 
 void _centroidRingEnd() {
-  _centroidPointRing([_x00, _y00]);
+  _centroidPointRing(_x00, _y00);
 }
 
-void _centroidPointFirstRing(List<num> p) {
+void _centroidPointFirstRing(num x, num y, [_]) {
   _centroidStream.point = _centroidPointRing;
-  _centroidPoint([_x00 = __x0 = p[0], _y00 = __y0 = p[1]]);
+  _centroidPoint(_x00 = __x0 = x, _y00 = __y0 = y);
 }
 
-void _centroidPointRing(List<num> p) {
-  num x = p[0],
-      y = p[1],
-      dx = x - __x0,
-      dy = y - __y0,
-      z = sqrt(dx * dx + dy * dy);
+void _centroidPointRing(num x, num y, [_]) {
+  num dx = x - __x0, dy = y - __y0, z = sqrt(dx * dx + dy * dy);
 
   _x1 += z * (__x0 + x) / 2;
   _y1 += z * (__y0 + y) / 2;
@@ -88,7 +80,7 @@ void _centroidPointRing(List<num> p) {
   _x2 += z * (__x0 + x);
   _y2 += z * (__y0 + y);
   _z2 += z * 3;
-  _centroidPoint([__x0 = x, __y0 = y]);
+  _centroidPoint(__x0 = x, __y0 = y);
 }
 
 List<double> centroid(Map object, [GeoStream Function(GeoStream)? transform]) {

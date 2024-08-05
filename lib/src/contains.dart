@@ -118,6 +118,8 @@ List<double> _pointRadians(List<num> point) =>
 /// in degrees. For Point and MultiPoint geometries, an exact test is used; for
 /// a Sphere, true is always returned; for other geometries, an epsilon
 /// threshold is applied.
+///
+/// {@category Spherical math}
 bool geoContains(Map? object, List<num> point) =>
     object != null && _containsObjectType.containsKey(object['type'])
         ? _containsObjectType[object['type']]!(object, point)

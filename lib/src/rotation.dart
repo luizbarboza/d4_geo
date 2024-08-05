@@ -1,17 +1,15 @@
 import 'compose.dart';
 import 'math.dart';
 import 'projection/projection.dart';
-import 'raw.dart';
 
-List<num> _identityPoint(List<num> p) {
-  var lambda = p[0];
+List<num> _identityPoint(num lambda, num phi, [_]) {
   if (abs(lambda) > pi) lambda -= round(lambda / tau) * tau;
-  return [lambda, p[1]];
+  return [lambda, phi];
 }
 
-const _rotationIdentity = GeoRawTransform(_identityPoint, _identityPoint);
+const _rotationIdentity = (_identityPoint, _identityPoint);
 
-GeoRawTransform rotateRadians(
+MaybeBijective rotateRadians(
         double deltaLambda, double deltaPhi, double deltaGamma) =>
     (deltaLambda %= tau) != 0
         ? deltaPhi != 0 || deltaGamma != 0
@@ -22,55 +20,57 @@ GeoRawTransform rotateRadians(
             ? _rotationPhiGamma(deltaPhi, deltaGamma)
             : _rotationIdentity;
 
-List<num> Function(List<num>) _forwardRotationLambda(double deltaLambda) =>
-    (p) {
-      var lambda = p[0] + deltaLambda;
+List<num> Function(num, num, [num?]) _forwardRotationLambda(
+        double deltaLambda) =>
+    (lambda, phi, [_]) {
+      lambda += deltaLambda;
       if (abs(lambda) > pi) lambda -= round(lambda / tau) * tau;
-      return [lambda, p[1]];
+      return [lambda, phi];
     };
 
-GeoRawTransform _rotationLambda(double deltaLambda) => GeoRawTransform(
-    _forwardRotationLambda(deltaLambda), _forwardRotationLambda(-deltaLambda));
+MaybeBijective _rotationLambda(double deltaLambda) =>
+    (_forwardRotationLambda(deltaLambda), _forwardRotationLambda(-deltaLambda));
 
-GeoRawTransform _rotationPhiGamma(double deltaPhi, deltaGamma) {
+MaybeBijective _rotationPhiGamma(double deltaPhi, deltaGamma) {
   final cosDeltaPhi = cos(deltaPhi),
       sinDeltaPhi = sin(deltaPhi),
       cosDeltaGamma = cos(deltaGamma),
       sinDeltaGamma = sin(deltaGamma);
 
-  return GeoRawTransform((p) {
-    var lambda = p[0],
-        phi = p[1],
-        cosPhi = cos(phi),
-        x = cos(lambda) * cosPhi,
-        y = sin(lambda) * cosPhi,
-        z = sin(phi),
-        k = z * cosDeltaPhi + x * sinDeltaPhi;
-    return [
-      atan2(y * cosDeltaGamma - k * sinDeltaGamma,
-          x * cosDeltaPhi - z * sinDeltaPhi),
-      asin(k * cosDeltaGamma + y * sinDeltaGamma)
-    ];
-  }, (p) {
-    var lambda = p[0],
-        phi = p[1],
-        cosPhi = cos(phi),
-        x = cos(lambda) * cosPhi,
-        y = sin(lambda) * cosPhi,
-        z = sin(phi),
-        k = z * cosDeltaGamma - y * sinDeltaGamma;
-    return [
-      atan2(y * cosDeltaGamma + z * sinDeltaGamma,
-          x * cosDeltaPhi + k * sinDeltaPhi),
-      asin(k * cosDeltaPhi - x * sinDeltaPhi)
-    ];
-  });
+  return (
+    (lambda, phi, [_]) {
+      var cosPhi = cos(phi),
+          x = cos(lambda) * cosPhi,
+          y = sin(lambda) * cosPhi,
+          z = sin(phi),
+          k = z * cosDeltaPhi + x * sinDeltaPhi;
+      return [
+        atan2(y * cosDeltaGamma - k * sinDeltaGamma,
+            x * cosDeltaPhi - z * sinDeltaPhi),
+        asin(k * cosDeltaGamma + y * sinDeltaGamma)
+      ];
+    },
+    (lambda, phi, [_]) {
+      var cosPhi = cos(phi),
+          x = cos(lambda) * cosPhi,
+          y = sin(lambda) * cosPhi,
+          z = sin(phi),
+          k = z * cosDeltaGamma - y * sinDeltaGamma;
+      return [
+        atan2(y * cosDeltaGamma + z * sinDeltaGamma,
+            x * cosDeltaPhi + k * sinDeltaPhi),
+        asin(k * cosDeltaPhi - x * sinDeltaPhi)
+      ];
+    }
+  );
 }
 
 /// A raw transform that represents a rotation about
 /// [each spherical axis](https://observablehq.com/@d3/three-axis-rotation).
-class GeoRotation implements GeoRawTransform {
-  GeoRawTransform rotate;
+///
+/// {@category Spherical math}
+class GeoRotation {
+  MaybeBijective rotate;
 
   /// Returns a rotation raw transform for the given [angles].
   ///
@@ -85,28 +85,21 @@ class GeoRotation implements GeoRawTransform {
       : rotate = rotateRadians(angles[0] * radians, angles[1] * radians,
             angles.length > 2 ? angles[2] * radians : 0);
 
-  /// Returns a new array \[*longitude*, *latitude*\] in degrees representing
-  /// the rotated point of the given *point*. The point must be specified as a
-  /// two-element array \[*longitude*, *latitude*\] in degrees.
-  @override
-  get forward => (coordinates) {
-        coordinates = rotate
-            .forward([coordinates[0] * radians, coordinates[1] * radians]);
-        coordinates[0] *= degrees;
-        coordinates[1] *= degrees;
-        return coordinates;
-      };
+  /// Returns a new list \[*longitude*, *latitude*\] in degrees representing the
+  /// rotated point of the given [point]. The point must be specified as a
+  /// two-element list \[*longitude*, *latitude*\] in degrees.
+  List<num> call(List<num> point) {
+    point = rotate.$1(point[0] * radians, point[1] * radians);
+    point[0] *= degrees;
+    point[1] *= degrees;
+    return point;
+  }
 
-  /// Returns a new array \[*longitude*, *latitude*\] in degrees representing
-  /// the point of the given rotated *point*; the inverse of [forward]. The
-  /// point must be specified as a two-element array \[*longitude*, *latitude*\]
-  /// in degrees.
-  @override
-  get backward => (coordinates) {
-        coordinates = rotate
-            .backward!([coordinates[0] * radians, coordinates[1] * radians]);
-        coordinates[0] *= degrees;
-        coordinates[1] *= degrees;
-        return coordinates;
-      };
+  /// Returns a new list \[*longitude*, *latitude*\] in degrees representing the
+  /// point of the given rotated [point]; the inverse of [call]. The point must
+  /// be specified as a two-element list \[*longitude*, *latitude*\] in degrees.
+  List<num>? invert(List<num> point) {
+    final coord = rotate.$2(point[0] * radians, point[1] * radians);
+    return coord != null ? [coord[0] * degrees, coord[1] * degrees] : null;
+  }
 }

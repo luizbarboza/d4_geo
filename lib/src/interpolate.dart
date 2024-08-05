@@ -9,6 +9,8 @@ import 'math.dart';
 /// Intermediate values interpolate from [a] to [b] along the great arc that
 /// passes through both [a] and [b]. If [a] and [b] are antipodes, an arbitrary
 /// great arc is chosen.
+///
+/// {@category Spherical math}
 List<double> Function(double) geoInterpolate(List<double> a, List<double> b) {
   var x0 = a[0] * radians,
       y0 = a[1] * radians,

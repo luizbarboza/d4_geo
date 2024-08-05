@@ -15,9 +15,10 @@ const _clipMax = 1e9, _clipMin = -_clipMax;
 /// are bounded by a rectangle of coordinates \[\[[x0], [y0]\], \[[x1], [y1]\]\].
 ///
 /// Typically used for post-clipping.
+///
+/// {@category Projections}
 GeoStream Function(GeoStream) geoClipRectangle(num x0, num y0, num x1, num y1) {
-  bool visible(List<num> p) {
-    var x = p[0], y = p[1];
+  bool visible(num x, num y) {
     return x0 <= x && x <= x1 && y0 <= y && y <= y1;
   }
 
@@ -57,10 +58,10 @@ GeoStream Function(GeoStream) geoClipRectangle(num x0, num y0, num x1, num y1) {
         (a = corner(from, direction)) != (a1 = corner(to!, direction)) ||
         (comparePoint(from, to) < 0) ^ (direction > 0)) {
       do {
-        stream.point([if (a == 0 || a == 3) x0 else x1, if (a > 1) y1 else y0]);
+        stream.point((a == 0 || a == 3) ? x0 : x1, (a > 1) ? y1 : y0);
       } while ((a = (a + direction + 4) % 4) != a1);
     } else {
-      stream.point(to);
+      stream.point(to[0], to[1]);
     }
   }
 
@@ -81,8 +82,8 @@ GeoStream Function(GeoStream) geoClipRectangle(num x0, num y0, num x1, num y1) {
 
     var clipStream = GeoStream();
 
-    void point(List<num> p) {
-      if (visible(p)) activeStream.point(p);
+    void point(num x, num y, [_]) {
+      if (visible(x, y)) activeStream.point(x, y);
     }
 
     int polygonInside() {
@@ -150,8 +151,8 @@ GeoStream Function(GeoStream) geoClipRectangle(num x0, num y0, num x1, num y1) {
       ring = null;
     }
 
-    void linePoint(List<num> p) {
-      var x = p[0], y = p[1], v = visible(p);
+    void linePoint(num x, num y, [_]) {
+      var v = visible(x, y);
       if (polygon != null) ring!.add([x, y]);
       if (first) {
         x0_ = x;
@@ -160,11 +161,11 @@ GeoStream Function(GeoStream) geoClipRectangle(num x0, num y0, num x1, num y1) {
         first = false;
         if (v) {
           activeStream.lineStart();
-          activeStream.point(p);
+          activeStream.point(x, y);
         }
       } else {
         if (v && v1_) {
-          activeStream.point(p);
+          activeStream.point(x, y);
         } else {
           var a = [
                 x1_ = max(_clipMin, min(_clipMax, x1_)),
@@ -177,14 +178,14 @@ GeoStream Function(GeoStream) geoClipRectangle(num x0, num y0, num x1, num y1) {
           if (clipLine(a, b, x0, y0, x1, y1)) {
             if (!v1_) {
               activeStream.lineStart();
-              activeStream.point(a);
+              activeStream.point(a[0], a[1]);
             }
-            activeStream.point(b);
+            activeStream.point(b[0], b[1]);
             if (!v) activeStream.lineEnd();
             clean = false;
           } else if (v) {
             activeStream.lineStart();
-            activeStream.point([x, y]);
+            activeStream.point(x, y);
             clean = false;
           }
         }
@@ -207,7 +208,7 @@ GeoStream Function(GeoStream) geoClipRectangle(num x0, num y0, num x1, num y1) {
     // clipping issues.
     void lineEnd() {
       if (segments != null) {
-        linePoint([x0_, y0_]);
+        linePoint(x0_, y0_);
         if (v0_ && v1_) bufferStream.rejoin();
         segments!.add(bufferStream.result());
       }

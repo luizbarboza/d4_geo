@@ -1,0 +1,18 @@
+dartdoc:
+  categories:
+    "Paths":
+      markdown: doc/path.md
+    "Projections":
+      markdown: doc/projection.md
+    "Azimuthal projections":
+      markdown: doc/azimuthal.md
+    "Conic projections":
+      markdown: doc/conic.md
+    "Cylindrical projections":
+      markdown: doc/cylindrical.md
+    "Streams":
+      markdown: doc/stream.md
+    "Spherical shapes":
+      markdown: doc/shape.md
+    "Spherical math":
+      markdown: doc/math.md

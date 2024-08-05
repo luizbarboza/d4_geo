@@ -1,21 +1,23 @@
 import '../cartesian.dart';
+import '../compose.dart';
 import '../math.dart';
-import '../raw.dart';
 import '../stream.dart';
 import '../transform.dart';
 
 double _maxDepth = 16, // maximum depth of subdivision
     _cosMinDistance = cos(30 * radians); // cos(minimum angular distance)
 
-GeoStream Function(GeoStream) resample(
-        GeoRawTransform project, double delta2) =>
+GeoStream Function(GeoStream) resample(MaybeBijective project, double delta2) =>
     delta2 > 0 ? _resampleDelta(project, delta2) : _resampleNone(project);
 
-GeoStream Function(GeoStream) _resampleNone(GeoRawTransform project) =>
-    GeoTransform(point: (stream, p) => stream.point(project.forward(p)));
+GeoStream Function(GeoStream) _resampleNone(MaybeBijective project) =>
+    GeoTransform(point: (stream, x, y, [_]) {
+      final p = project.$1(x, y);
+      stream.point(p[0], p[1]);
+    }).stream;
 
 GeoStream Function(GeoStream) _resampleDelta(
-    GeoRawTransform project, double delta2) {
+    MaybeBijective project, double delta2) {
   void resampleLineTo(
       num x0,
       num y0,
@@ -42,7 +44,7 @@ GeoStream Function(GeoStream) _resampleDelta(
               abs(abs(c) - 1) < epsilon || abs(lambda0 - lambda1) < epsilon
                   ? (lambda0 + lambda1) / 2
                   : atan2(b, a),
-          p = project.forward([lambda2, phi2]),
+          p = project.$1(lambda2, phi2),
           x2 = p[0],
           y2 = p[1],
           dx2 = x2 - x0,
@@ -57,7 +59,7 @@ GeoStream Function(GeoStream) _resampleDelta(
         // angular distance
         resampleLineTo(x0, y0, lambda0, a0, b0, c0, x2, y2, lambda2, a /= m,
             b /= m, c, depth, stream);
-        stream.point([x2, y2]);
+        stream.point(x2, y2);
         resampleLineTo(x2, y2, lambda2, a, b, c, x1, y1, lambda1, a1, b1, c1,
             depth, stream);
       }
@@ -72,15 +74,16 @@ GeoStream Function(GeoStream) _resampleDelta(
 
     var resampleStream = GeoStream();
 
-    void point(List<num> p) {
-      stream.point(project.forward(p));
+    void point(num x, num y, [_]) {
+      final p = project.$1(x, y);
+      stream.point(p[0], p[1]);
     }
 
-    void linePoint(List<num> s) {
-      var c = cartesian(s), p = project.forward(s);
+    void linePoint(num lambda, num phi, [_]) {
+      var c = cartesian([lambda, phi]), p = project.$1(lambda, phi);
       resampleLineTo(x0, y0, lambda0, a0, b0, c0, x0 = p[0], y0 = p[1],
-          lambda0 = s[0], a0 = c[0], b0 = c[1], c0 = c[2], _maxDepth, stream);
-      stream.point([x0, y0]);
+          lambda0 = lambda, a0 = c[0], b0 = c[1], c0 = c[2], _maxDepth, stream);
+      stream.point(x0, y0);
     }
 
     void lineStart() {
@@ -94,9 +97,8 @@ GeoStream Function(GeoStream) _resampleDelta(
       stream.lineEnd();
     }
 
-    void ringPoint(List<num> p) {
-      lambda00 = p[0];
-      linePoint(p);
+    void ringPoint(num lambda, num phi, [_]) {
+      linePoint(lambda00 = lambda, phi);
       x00 = x0;
       y00 = y0;
       a00 = a0;

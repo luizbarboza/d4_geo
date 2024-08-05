@@ -1,0 +1,1 @@
+Low-level utilities for spherical geometry.

@@ -1,15 +1,21 @@
 import '../math.dart';
-import '../raw.dart';
+import 'raw.dart';
 import 'azimuthal.dart';
 import 'projection.dart';
 
 /// The raw stereographic projection.
-final geoStereographicRaw = GeoRawTransform((p) {
-  var x = p[0], y = p[1], cy = cos(y), k = 1 + cos(x) * cy;
+///
+/// {@category Projections}
+/// {@category Azimuthal projections}
+final geoStereographicRaw = GeoRawProjection((x, y, [_]) {
+  var cy = cos(y), k = 1 + cos(x) * cy;
   return [cy * sin(x) / k, sin(y) / k];
-}, azimuthalBackward((z) => 2 * atan(z)));
+}, azimuthalInvert((z) => 2 * atan(z)));
 
 /// The stereographic projection.
+///
+/// {@category Projections}
+/// {@category Azimuthal projections}
 GeoProjection geoStereographic() => GeoProjection(geoStereographicRaw)
   ..scale = 250
   ..clipAngle = 142;

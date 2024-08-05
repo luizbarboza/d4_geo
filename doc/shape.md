@@ -1,0 +1,3 @@
+These shape generators return spherical GeoJSON for use with [GeoPath](https://pub.dev/documentation/d4_geo/latest/d4_geo/GeoPath-class.html).
+
+**TIP**: To generate a [great arc](https://en.wikipedia.org/wiki/Great-circle_distance) (a segment of a great circle), pass a GeoJSON LineString geometry object to a [GeoPath](https://pub.dev/documentation/d4_geo/latest/d4_geo/GeoPath-class.html). D4’s projections use geodesic interpolation for intermediate points.

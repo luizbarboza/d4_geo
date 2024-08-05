@@ -5,8 +5,7 @@ late num _x0, _y0, _x1, _y1;
 
 var _boundsStream = GeoStream(point: _boundsPoint);
 
-void _boundsPoint(List<num> p) {
-  var x = p[0], y = p[1];
+void _boundsPoint(num x, num y, [_]) {
   if (x < _x0) _x0 = x;
   if (x > _x1) _x1 = x;
   if (y < _y0) _y0 = y;

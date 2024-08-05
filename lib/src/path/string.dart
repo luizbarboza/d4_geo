@@ -21,8 +21,7 @@ class GeoPathString extends GeoPathSink {
       if (_line == 0) _string.add("Z");
       _point = 2;
     };
-    point = (p) {
-      var x = p[0], y = p[1];
+    point = (x, y, [_]) {
       switch (_point) {
         case 0:
           _string.addAll(["M", x.toString(), ",", y.toString()]);

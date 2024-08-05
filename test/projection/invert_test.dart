@@ -50,7 +50,7 @@ void main() {
     expect(
         factories.map((f) {
           final projection = f();
-          return points.map((p) => [p, projection.forward(p)]).toList();
+          return points.map((p) => [p, projection.call(p)]).toList();
         }).toList(),
         factories.map((f) {
           final projectionEqual = ProjectionEqual(f());
@@ -66,7 +66,7 @@ void main() {
       [-157.8583, 21.3069]
     ];
 
-    expect(points2.map((p) => [p, projection.forward(p)]).toList(),
+    expect(points2.map((p) => [p, projection.call(p)]).toList(),
         List.filled(points2.length, ProjectionEqual(projection)));
   });
 }

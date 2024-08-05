@@ -1,22 +1,19 @@
 import '../math.dart';
 import '../path/bounds.dart';
-import 'projection.dart';
 
-GeoProjection fit(GeoProjection projection,
-    void Function(List<List<num>>) fitBounds, Map object,
+fit(projection, void Function(List<List<num>>) fitBounds, Map object,
     [bool ignoreClipExtent = true]) {
   var clip = ignoreClipExtent ? projection.clipExtent : null;
   projection
-    ..scale = 150
-    ..translate = [0, 0];
+    ..scale = 150.0
+    ..translate = [0.0, 0.0];
   if (clip != null) projection.clipExtent = null;
-  fitBounds(bounds(object, projection));
+  fitBounds(bounds(object, projection.stream));
   if (clip != null) projection.clipExtent = clip;
   return projection;
 }
 
-GeoProjection extent(
-        GeoProjection projection, List<List<double>> extent, Map object,
+extent(projection, List<List<double>> extent, Map object,
         [bool ignoreClipExtent = true]) =>
     fit(projection, (b) {
       var w = extent[1][0] - extent[0][0],
@@ -29,7 +26,7 @@ GeoProjection extent(
         ..translate = [x, y];
     }, object, ignoreClipExtent);
 
-GeoProjection size(GeoProjection projection, List<double> size, Map object,
+size(projection, List<double> size, Map object,
         [bool ignoreClipExtent = true]) =>
     extent(
         projection,
@@ -40,8 +37,7 @@ GeoProjection size(GeoProjection projection, List<double> size, Map object,
         object,
         ignoreClipExtent);
 
-GeoProjection width(GeoProjection projection, double width, Map object,
-        [bool ignoreClipExtent = true]) =>
+width(projection, double width, Map object, [bool ignoreClipExtent = true]) =>
     fit(projection, (b) {
       var w = width,
           k = w / (b[1][0] - b[0][0]),
@@ -52,8 +48,7 @@ GeoProjection width(GeoProjection projection, double width, Map object,
         ..translate = [x, y];
     }, object, ignoreClipExtent);
 
-GeoProjection height(GeoProjection projection, double height, Map object,
-        [bool ignoreClipExtent = true]) =>
+height(projection, double height, Map object, [bool ignoreClipExtent = true]) =>
     fit(projection, (b) {
       var h = height,
           k = h / (b[1][1] - b[0][1]),

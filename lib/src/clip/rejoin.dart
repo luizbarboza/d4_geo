@@ -41,7 +41,7 @@ void rejoin(
       if (p0.length == 2 && p1.length == 2) {
         stream.lineStart();
         for (i = 0; i < n; ++i) {
-          stream.point(p0 = segment[i]);
+          stream.point((p0 = segment[i])[0], p0[1]);
         }
         stream.lineEnd();
         continue;
@@ -69,6 +69,7 @@ void rejoin(
 
   var start = subject[0];
   List<List<num>>? points;
+  List<num> point;
 
   while (true) {
     // Find first unvisited intersection.
@@ -86,7 +87,7 @@ void rejoin(
         if (isSubject) {
           n = points!.length;
           for (i = 0; i < n; ++i) {
-            stream.point(points[i]);
+            stream.point((point = points[i])[0], point[1]);
           }
         } else {
           interpolate(current.x, current.n!.x, 1, stream);
@@ -96,7 +97,7 @@ void rejoin(
         if (isSubject) {
           points = current.p!.z!;
           for (i = points.length - 1; i >= 0; --i) {
-            stream.point(points[i]);
+            stream.point((point = points[i])[0], point[1]);
           }
         } else {
           interpolate(current.x, current.p!.x, -1, stream);

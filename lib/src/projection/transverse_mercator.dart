@@ -1,19 +1,28 @@
 import '../math.dart';
-import '../raw.dart';
+import 'raw.dart';
 import 'mercator.dart';
 import 'projection.dart';
 
-List<num> _forward(List<num> p) => [log(tan((halfPi + p[1]) / 2)), -p[0]];
+List<num> _transverseMercatorRaw(num lambda, num phi, [_]) =>
+    [log(tan((halfPi + phi) / 2)), -lambda];
 
-List<num> _backward(List<num> p) => [-p[1], 2 * atan(exp(p[0])) - halfPi];
+List<num> _transverseMercatorInvert(num x, num y, [_]) =>
+    [-y, 2 * atan(exp(x)) - halfPi];
 
 /// The raw transverse spherical Mercator projection.
-const geoTransverseMercatorRaw = GeoRawTransform(_forward, _backward);
+///
+/// {@category Projections}
+/// {@category Cylindrical projections}
+const geoTransverseMercatorRaw =
+    GeoRawProjection(_transverseMercatorRaw, _transverseMercatorInvert);
 
 /// The transverse spherical Mercator projection.
 ///
 /// Defines a default [GeoProjection.clipExtent] such that the world is
 /// projected to a square, clipped to approximately ±85° latitude.
+///
+/// {@category Projections}
+/// {@category Cylindrical projections}
 class GeoTransverseMercator extends MercatorProjection {
   GeoTransverseMercator() : super(geoTransverseMercatorRaw) {
     super.rotate = [0, 0, 90];
@@ -21,24 +30,28 @@ class GeoTransverseMercator extends MercatorProjection {
   }
 
   @override
-  set center(List<double> _) {
-    super.center = [-_[1], _[0]];
+  set center(List<double> center) {
+    super.center = [-center[1], center[0]];
   }
 
   @override
   get center {
-    var _ = super.center;
-    return [_[1], -_[0]];
+    var c = super.center;
+    return [c[1], -c[0]];
   }
 
   @override
-  set rotate(List<double> _) {
-    super.rotate = [_[0], _[1], if (_.length > 2) _[2] + 90 else 90];
+  set rotate(List<double> rotate) {
+    super.rotate = [
+      rotate[0],
+      rotate[1],
+      if (rotate.length > 2) rotate[2] + 90 else 90
+    ];
   }
 
   @override
   get rotate {
-    var _ = super.rotate;
-    return [_[0], _[1], _[2] - 90];
+    var r = super.rotate;
+    return [r[0], r[1], r[2] - 90];
   }
 }

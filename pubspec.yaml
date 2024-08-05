@@ -1,15 +1,16 @@
 name: d4_geo
-version: 1.0.3
+version: 2.0.0
 description: Geographic projections, spherical shapes and spherical trigonometry.
 repository: https://github.com/luizbarboza/d4_geo
 
 environment:
-  sdk: '>=2.18.0 <3.0.0'
+  sdk: '>=3.0.0 <4.0.0'
 
 dependencies:
+  d4_path: ^1.0.0
   topo_client: ^1.0.3
   topo_parse: ^1.0.0
 
 dev_dependencies:
-  lints: ^2.0.1
-  test: ^1.22.0
+  lints: ^4.0.0
+  test: ^1.25.8

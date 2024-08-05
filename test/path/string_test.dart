@@ -28,7 +28,7 @@ void main() {
     expect(
         normalizePath((GeoPath()
           ..transform = equirectangular
-          ..pointRadius = ((_) => 10))({
+          ..pointRadius = ((_, [__]) => 10))({
           "type": "Point",
           "coordinates": [-63, 18]
         }) as String),

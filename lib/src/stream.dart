@@ -1,13 +1,17 @@
 import 'noop.dart';
 
-/// Streams have several function-properties that are called to transform an
-/// input geometry.
+/// Rather than materializing intermediate representations, streams transform
+/// geometry through function calls to minimize overhead.
 ///
-/// No materializations of intermediate representations are made, which
-/// minimizes overhead. Streams are inherently stateful; the meaning of a point
-/// depends on whether the point is inside of a line, and likewise a line is
-/// distinguished from a ring by a polygon. Despite the name “stream”, these
-/// method calls are currently synchronous.
+/// Streams are inherently stateful; the meaning of a
+/// [point](https://pub.dev/documentation/d4_geo/latest/d4_geo/GeoStream/point.html)
+/// depends on whether the point is inside of a
+/// [line](https://pub.dev/documentation/d4_geo/latest/d4_geo/GeoStream/line.html),
+/// and likewise a line is distinguished from a ring by a
+/// [polygon](https://pub.dev/documentation/d4_geo/latest/d4_geo/GeoStream/polygonStart.html).
+/// Despite the name “stream”, these method calls are currently synchronous.
+///
+/// {@category Streams}
 class GeoStream {
   /// Indicates a point with the specified coordinates \[*x*, *y*\, (and
   /// optionally *z*)].
@@ -18,7 +22,7 @@ class GeoStream {
   /// geometry object ([Point](http://www.geojson.org/geojson-spec.html#point)
   /// or [MultiPoint](http://www.geojson.org/geojson-spec.html#multipoint)).
   /// Within a line or polygon ring, the point indicates a control point.
-  void Function(List<num>) point;
+  void Function(num x, num y, [num? z]) point;
 
   /// Indicates the start of a line or ring. Within a polygon, indicates the
   /// start of a ring.
@@ -31,36 +35,36 @@ class GeoStream {
   /// Indicates the end of a line or ring. Within a polygon, indicates the end
   /// of a ring.
   ///
-  /// Unlike GeoJSON, the redundant closing coordinate of a ring is not
+  /// Unlike GeoJSON, the redundant closing coordinate of a ring is *not*
   /// indicated via [point], and instead is implied via lineEnd within a
   /// polygon. Thus, the given polygon input:
   ///
   /// ```dart
-  ///   {
-  ///     "type": "Polygon",
-  ///     "coordinates": [
-  ///       [
-  ///         [0, 0],
-  ///         [0, 1],
-  ///         [1, 1],
-  ///         [1, 0],
-  ///         [0, 0]
-  ///       ]
+  /// {
+  ///   "type": "Polygon",
+  ///   "coordinates": [
+  ///     [
+  ///       [0, 0],
+  ///       [0, 1],
+  ///       [1, 1],
+  ///       [1, 0],
+  ///       [0, 0]
   ///     ]
-  ///   };
+  ///   ]
+  /// };
   /// ```
   ///
   /// Will produce the following series of method calls on the stream:
   ///
   /// ```dart
-  ///   stream.polygonStart();
-  ///   stream.lineStart();
-  ///   stream.point(0, 0);
-  ///   stream.point(0, 1);
-  ///   stream.point(1, 1);
-  ///   stream.point(1, 0);
-  ///   stream.lineEnd();
-  ///   stream.polygonEnd();
+  /// stream.polygonStart();
+  /// stream.lineStart();
+  /// stream.point(0, 0);
+  /// stream.point(0, 1);
+  /// stream.point(1, 1);
+  /// stream.point(1, 0);
+  /// stream.lineEnd();
+  /// stream.polygonEnd();
   /// ```
   void Function() lineEnd;
 
@@ -82,7 +86,7 @@ class GeoStream {
       this.polygonStart = noop,
       this.polygonEnd = noop});
 
-  /// Streams the specified [GeoJSON](http://geojson.org/) *object*.
+  /// Streams the specified [GeoJSON](http://geojson.org/) [object].
   ///
   /// While both features and geometry objects are supported as input, the
   /// stream only describes the geometry, and thus additional feature properties
@@ -106,7 +110,7 @@ class GeoStream {
       _streamGeometry(object['geometry']);
     },
     'FeatureCollection': (object) {
-      var features = object['features'];
+      List features = object['features'];
       for (var i = 0; i < features.length; i++) {
         _streamGeometry(features[i]['geometry']);
       }
@@ -118,19 +122,28 @@ class GeoStream {
       sphere();
     },
     'Point': (object) {
-      point(object['coordinates']);
+      List coordinate = object['coordinates'];
+      point(coordinate[0], coordinate[1],
+          coordinate.length > 2 ? coordinate[2] : null);
     },
     'MultiPoint': (object) {
-      var coordinates = object['coordinates'], i = -1, n = coordinates.length;
+      var coordinates = object['coordinates'] as List,
+          i = -1,
+          n = coordinates.length;
+      List coordinate;
       while (++i < n) {
-        point(coordinates[i]);
+        coordinate = coordinates[i];
+        point(coordinate[0], coordinate[1],
+            coordinate.length > 2 ? coordinate[2] : null);
       }
     },
     'LineString': (object) {
       _streamLine(object['coordinates'], 0);
     },
     'MultiLineString': (object) {
-      var coordinates = object['coordinates'], i = -1, n = coordinates.length;
+      var coordinates = object['coordinates'] as List,
+          i = -1,
+          n = coordinates.length;
       while (++i < n) {
         _streamLine(coordinates[i], 0);
       }
@@ -139,29 +152,36 @@ class GeoStream {
       _streamPolygon(object['coordinates']);
     },
     'MultiPolygon': (object) {
-      var coordinates = object['coordinates'], i = -1, n = coordinates.length;
+      var coordinates = object['coordinates'] as List,
+          i = -1,
+          n = coordinates.length;
       while (++i < n) {
         _streamPolygon(coordinates[i]);
       }
     },
     'GeometryCollection': (object) {
-      var geometries = object['geometries'], i = -1, n = geometries.length;
+      var geometries = object['geometries'] as List,
+          i = -1,
+          n = geometries.length;
       while (++i < n) {
         _streamGeometry(geometries[i]);
       }
     }
   };
 
-  void _streamLine(coordinates, int closed) {
+  void _streamLine(List coordinates, int closed) {
     var i = -1, n = coordinates.length - closed;
+    List coordinate;
     lineStart();
     while (++i < n) {
-      point(List.castFrom<dynamic, num>(coordinates[i]));
+      coordinate = coordinates[i];
+      point(coordinate[0], coordinate[1],
+          coordinate.length > 2 ? coordinate[2] : null);
     }
     lineEnd();
   }
 
-  void _streamPolygon(coordinates) {
+  void _streamPolygon(List coordinates) {
     var i = -1, n = coordinates.length;
     polygonStart();
     while (++i < n) {

@@ -1,21 +1,17 @@
+import 'package:d4_path/d4_path.dart';
+
 import '../math.dart';
-import '../noop.dart';
 import 'sink.dart';
 
-/// Renders a path to a canvas using a subset of the CanvasRenderingContext2D
-/// API.
+// Renders a path to a canvas using a subset of the CanvasRenderingContext2D
+// API.
 class GeoPathContext extends GeoPathSink {
   double _radius = 4.5;
   int _line = 1, _point = 2;
 
-  final void Function(num, num) moveTo, lineTo;
-  final void Function(num, num, num, num, num) arc;
-  final void Function() closePath;
-  final Object? Function() _result;
+  Path context;
 
-  GeoPathContext(this.moveTo, this.lineTo, this.arc, this.closePath,
-      [Object? Function() result = noop])
-      : _result = result {
+  GeoPathContext(this.context) {
     polygonStart = () {
       _line = 0;
     };
@@ -26,22 +22,21 @@ class GeoPathContext extends GeoPathSink {
       _point = 0;
     };
     lineEnd = () {
-      if (_line == 0) closePath();
+      if (_line == 0) context.closePath();
       _point = 2;
     };
-    point = (p) {
-      var x = p[0], y = p[1];
+    point = (x, y, [_]) {
       switch (_point) {
         case 0:
-          moveTo(x, y);
+          context.moveTo(x, y);
           _point = 1;
           break;
         case 1:
-          lineTo(x, y);
+          context.lineTo(x, y);
           break;
         default:
-          moveTo(x + _radius, y);
-          arc(x, y, _radius, 0, tau);
+          context.moveTo(x + _radius, y);
+          context.arc(x, y, _radius, 0, tau);
       }
     };
   }
@@ -50,5 +45,5 @@ class GeoPathContext extends GeoPathSink {
   pointRadius(radius) => _radius = radius;
 
   @override
-  result() => _result();
+  result() => null;
 }

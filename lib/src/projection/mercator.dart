@@ -1,26 +1,33 @@
 import 'dart:math';
 
 import '../math.dart';
-import '../raw.dart';
+import 'raw.dart';
 import '../rotation.dart';
 import 'projection.dart';
 
-List<num> _forward(List<num> p) => [p[0], log(tan((halfPi + p[1]) / 2))];
+List<num> _mercatorRaw(num lambda, num phi, [_]) =>
+    [lambda, log(tan((halfPi + phi) / 2))];
 
-List<num> _backward(List<num> p) => [p[0], 2 * atan(exp(p[1])) - halfPi];
+List<num> _mercatorInvert(num x, num y, [_]) => [x, 2 * atan(exp(y)) - halfPi];
 
 /// The raw spherical Mercator projection.
-const geoMercatorRaw = GeoRawTransform(_forward, _backward);
+///
+/// {@category Projections}
+/// {@category Cylindrical projections}
+const geoMercatorRaw = GeoRawProjection(_mercatorRaw, _mercatorInvert);
 
 /// The spherical Mercator projection.
 ///
 /// Defines a default [GeoProjection.clipExtent] such that the world is
 /// projected to a square, clipped to approximately ±85° latitude.
+///
+/// {@category Projections}
+/// {@category Cylindrical projections}
 GeoProjection geoMercator() =>
     MercatorProjection(geoMercatorRaw)..scale = 961 / tau;
 
 class MercatorProjection extends GeoProjection {
-  final GeoRawTransform _project;
+  final GeoRawProjection _project;
   double? _x0, _y0, _x1, _y1; // clip extent
 
   MercatorProjection(this._project) : super(_project) {
@@ -28,32 +35,32 @@ class MercatorProjection extends GeoProjection {
   }
 
   @override
-  set scale(double _) {
-    super.scale = _;
+  set scale(double scale) {
+    super.scale = scale;
     _reclip();
   }
 
   @override
-  set translate(List<double> _) {
-    super.translate = _;
+  set translate(List<double> translate) {
+    super.translate = translate;
     _reclip();
   }
 
   @override
-  set center(List<double> _) {
-    super.center = _;
+  set center(List<double> center) {
+    super.center = center;
     _reclip();
   }
 
   @override
-  set clipExtent(List<List<double>>? _) {
-    if (_ == null) {
+  set clipExtent(List<List<double>>? clipExtent) {
+    if (clipExtent == null) {
       _x0 = _y0 = _x1 = _y1 = null;
     } else {
-      _x0 = _[0][0];
-      _y0 = _[0][1];
-      _x1 = _[1][0];
-      _y1 = _[1][1];
+      _x0 = clipExtent[0][0];
+      _y0 = clipExtent[0][1];
+      _x1 = clipExtent[1][0];
+      _y1 = clipExtent[1][1];
     }
     _reclip();
   }
@@ -69,19 +76,19 @@ class MercatorProjection extends GeoProjection {
   void _reclip() {
     var k = pi * scale,
         r = rotate,
-        t = forward(GeoRotation([r[0], r[1], r[2]]).backward!([0, 0]));
+        t = call(GeoRotation([r[0], r[1], r[2]]).invert([0, 0])!);
     super.clipExtent = _x0 == null
         ? [
-            [t[0] - k, t[1] - k],
+            [t![0] - k, t[1] - k],
             [t[0] + k, t[1] + k]
           ]
         : identical(_project, geoMercatorRaw)
             ? [
-                [max(t[0] - k, _x0!), _y0!],
+                [max(t![0] - k, _x0!), _y0!],
                 [min(t[0] + k, _x1!), _y1!]
               ]
             : [
-                [_x0!, max(t[1] - k, _y0!)],
+                [_x0!, max(t![1] - k, _y0!)],
                 [_x1!, min(t[1] + k, _y1!)]
               ];
   }

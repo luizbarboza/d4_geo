@@ -5,8 +5,8 @@ class Buffer extends GeoStream {
   List<List<num>>? _line;
 
   Buffer() {
-    point = (p) {
-      _line!.add(p);
+    point = (x, y, [m]) {
+      _line!.add([x, y, if (m != null) m]);
     };
     lineStart = () {
       _lines.add(_line = []);

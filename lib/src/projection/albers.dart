@@ -4,6 +4,9 @@ import 'projection.dart';
 /// The Albers’ equal area-conic projection.
 ///
 /// This is a U.S.-centric configuration of [geoConicEqualArea].
+///
+/// {@category Projections}
+/// {@category Conic projections}
 GeoProjection geoAlbers() => geoConicEqualArea()
   ..parallels = [29.5, 45.5]
   ..scale = 1070

@@ -6,7 +6,7 @@ import 'line.dart';
 import 'rejoin.dart';
 
 GeoStream Function(GeoStream) clip(
-        bool Function(List<num>) pointVisible,
+        bool Function(num, num) pointVisible,
         ClipLine Function(GeoStream) clipLine,
         void Function(List<num>?, List<num>?, int, GeoStream) interpolate,
         List<double> start) =>
@@ -21,12 +21,12 @@ GeoStream Function(GeoStream) clip(
 
       var clip = GeoStream();
 
-      void point(List<num> p) {
-        if (pointVisible(p)) sink.point(p);
+      void point(num lambda, num phi, [_]) {
+        if (pointVisible(lambda, phi)) sink.point(lambda, phi);
       }
 
-      void pointLine(List<num> p) {
-        line.point(p);
+      void pointLine(num lambda, num phi, [_]) {
+        line.point(lambda, phi);
       }
 
       void lineStart() {
@@ -39,9 +39,9 @@ GeoStream Function(GeoStream) clip(
         line.lineEnd();
       }
 
-      void pointRing(List<num> p) {
-        ring!.add(p);
-        ringSink.point(p);
+      void pointRing(num lambda, num phi, [_]) {
+        ring!.add([lambda, phi]);
+        ringSink.point(lambda, phi);
       }
 
       void ringStart() {
@@ -50,12 +50,13 @@ GeoStream Function(GeoStream) clip(
       }
 
       void ringEnd() {
-        pointRing(ring![0]);
+        pointRing(ring![0][0], ring![0][1]);
         ringSink.lineEnd();
 
         var clean = ringSink.clean(), ringSegments = ringBuffer.result();
         int i, n = ringSegments.length, m;
         List<List<num>> segment;
+        List<num> point;
 
         ring!.removeLast();
         polygon!.add(ring!);
@@ -73,7 +74,7 @@ GeoStream Function(GeoStream) clip(
             }
             sink.lineStart();
             for (i = 0; i < m; ++i) {
-              sink.point(segment[i]);
+              sink.point((point = segment[i])[0], point[1]);
             }
             sink.lineEnd();
           }

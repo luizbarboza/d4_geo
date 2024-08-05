@@ -19,18 +19,19 @@ void _lengthLineEnd() {
   _lengthStream.point = _lengthStream.lineEnd = noop;
 }
 
-void _lengthPointFirst(List<num> p) {
-  var lambda = p[0] * radians, phi = p[1] * radians;
+void _lengthPointFirst(num lambda, num phi, [_]) {
+  lambda *= radians;
+  phi *= radians;
   _lambda0 = lambda;
   _sinPhi0 = sin(phi);
   _cosPhi0 = cos(phi);
   _lengthStream.point = _lengthPoint;
 }
 
-void _lengthPoint(List<num> p) {
-  var lambda = p[0] * radians,
-      phi = p[1] * radians,
-      sinPhi = sin(phi),
+void _lengthPoint(num lambda, num phi, [_]) {
+  lambda *= radians;
+  phi *= radians;
+  var sinPhi = sin(phi),
       cosPhi = cos(phi),
       delta = abs(lambda - _lambda0),
       cosDelta = cos(delta),
@@ -49,6 +50,8 @@ void _lengthPoint(List<num> p) {
 ///
 /// For polygons, returns the perimeter of the exterior ring plus that of any
 /// interior rings. This is the spherical equivalent of [GeoPath.measure].
+///
+/// {@category Spherical math}
 double geoLength(Map object) {
   _lengthSum = Adder();
   _lengthStream(object);

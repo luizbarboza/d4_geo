@@ -9,8 +9,10 @@ import 'stream.dart';
 /// [GeoPath.transform]. However, transform only implements a subset of the
 /// other projection methods, and represent arbitrary geometric transformations
 /// rather than projections from spherical to planar coordinates.
+///
+/// {@category Projections}
 class GeoTransform {
-  final void Function(GeoStream, List<num>)? _point;
+  final void Function(GeoStream, num, num, [num?])? _point;
   final void Function(GeoStream)? _sphere,
       _lineStart,
       _lineEnd,
@@ -25,20 +27,20 @@ class GeoTransform {
   /// (see also [GeoIdentity.reflectX]):
   ///
   /// ```dart
-  ///   var reflectY = GeoTransform(point: (stream, p) {
-  ///     stream.point([p[0], -p[1]]);
-  ///   });
+  /// var reflectY = GeoTransform(point: (stream, x, y, [z]) {
+  ///   stream.point([x, -y]);
+  /// });
   /// ```
   ///
   /// Or to define an affine matrix transformation:
   ///
   /// ```dart
-  /// matrix(a, b, c, d, tx, ty) => GeoTransform(point: (stream, p) {
-  ///     stream.point([a * p[0] + b * p[1] + tx, c * p[0] + d * p[1] + ty]);
-  ///   });
+  /// matrix(a, b, c, d, tx, ty) => GeoTransform(point: (stream, x, y, [z]) {
+  ///       stream.point([a * x + b * y + tx, c * x + d * y + ty]);
+  ///     });
   /// ```
   GeoTransform(
-      {void Function(GeoStream, List<num>)? point,
+      {void Function(GeoStream, num, num, [num?])? point,
       void Function(GeoStream)? sphere,
       void Function(GeoStream)? lineStart,
       void Function(GeoStream)? lineEnd,
@@ -51,9 +53,9 @@ class GeoTransform {
         _polygonStart = polygonStart,
         _polygonEnd = polygonEnd;
 
-  GeoStream call(GeoStream stream) {
+  GeoStream stream(GeoStream stream) {
     var s = TransformStream(stream);
-    if (_point != null) s.point = (p) => _point!(stream, p);
+    if (_point != null) s.point = (x, y, [z]) => _point!(stream, x, y, z);
     if (_sphere != null) s.sphere = () => _sphere!(stream);
     if (_lineStart != null) s.lineStart = () => _lineStart!(stream);
     if (_lineEnd != null) s.lineEnd = () => _lineEnd!(stream);
@@ -66,7 +68,7 @@ class GeoTransform {
 class TransformStream extends GeoStream {
   TransformStream(GeoStream stream)
       : super(
-            point: (p) => stream.point(p),
+            point: (x, y, [z]) => stream.point(x, y, z),
             sphere: () => stream.sphere(),
             lineStart: () => stream.lineStart(),
             lineEnd: () => stream.lineEnd(),

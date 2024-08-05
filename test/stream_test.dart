@@ -65,11 +65,11 @@ void main() {
 
   test("geoStream(Point) ↦ point", () {
     var calls = 0, coordinates = 0;
-    GeoStream(point: (p) {
+    GeoStream(point: (x, y, [z]) {
       //expect(arguments.length, equals(3));
-      expect(p[0], equals(++coordinates));
-      expect(p[1], equals(++coordinates));
-      expect(p[2], equals(++coordinates));
+      expect(x, equals(++coordinates));
+      expect(y, equals(++coordinates));
+      expect(z, equals(++coordinates));
       expect(++calls, equals(1));
     })({
       "type": "Point",
@@ -80,11 +80,11 @@ void main() {
 
   test("geoStream(MultiPoint) ↦ point*", () {
     var calls = 0, coordinates = 0;
-    GeoStream(point: (p) {
+    GeoStream(point: (x, y, [z]) {
       //expect(arguments.length, equals(3));
-      expect(p[0], equals(++coordinates));
-      expect(p[1], equals(++coordinates));
-      expect(p[2], equals(++coordinates));
+      expect(x, equals(++coordinates));
+      expect(y, equals(++coordinates));
+      expect(z, equals(++coordinates));
       expect(1 <= ++calls && calls <= 2, equals(true));
     })({
       "type": "MultiPoint",
@@ -101,11 +101,11 @@ void main() {
     GeoStream(lineStart: () {
       //expect(arguments.length, equals(0));
       expect(++calls, equals(1));
-    }, point: (p) {
+    }, point: (x, y, [z]) {
       //expect(arguments.length, equals(3));
-      expect(p[0], equals(++coordinates));
-      expect(p[1], equals(++coordinates));
-      expect(p[2], equals(++coordinates));
+      expect(x, equals(++coordinates));
+      expect(y, equals(++coordinates));
+      expect(z, equals(++coordinates));
       expect(2 <= ++calls && calls <= 3, equals(true));
     }, lineEnd: () {
       //expect(arguments.length, equals(0));
@@ -125,11 +125,11 @@ void main() {
     GeoStream(lineStart: () {
       //expect(arguments.length, equals(0));
       expect(++calls == 1 || calls == 5, equals(true));
-    }, point: (p) {
+    }, point: (x, y, [z]) {
       //expect(arguments.length, equals(3));
-      expect(p[0], equals(++coordinates));
-      expect(p[1], equals(++coordinates));
-      expect(p[2], equals(++coordinates));
+      expect(x, equals(++coordinates));
+      expect(y, equals(++coordinates));
+      expect(z, equals(++coordinates));
       expect(
           2 <= ++calls && calls <= 3 || 6 <= calls && calls <= 7, equals(true));
     }, lineEnd: () {
@@ -161,11 +161,11 @@ void main() {
     }, lineStart: () {
       //expect(arguments.length, equals(0));
       expect(++calls == 2 || calls == 6, equals(true));
-    }, point: (p) {
+    }, point: (x, y, [z]) {
       //expect(arguments.length, equals(3));
-      expect(p[0], equals(++coordinates));
-      expect(p[1], equals(++coordinates));
-      expect(p[2], equals(++coordinates));
+      expect(x, equals(++coordinates));
+      expect(y, equals(++coordinates));
+      expect(z, equals(++coordinates));
       expect(
           3 <= ++calls && calls <= 4 || 7 <= calls && calls <= 8, equals(true));
     }, lineEnd: () {
@@ -202,11 +202,11 @@ void main() {
     }, lineStart: () {
       //expect(arguments.length, equals(0));
       expect(++calls == 2 || calls == 8, equals(true));
-    }, point: (p) {
+    }, point: (x, y, [z]) {
       //expect(arguments.length, equals(3));
-      expect(p[0], equals(++coordinates));
-      expect(p[1], equals(++coordinates));
-      expect(p[2], equals(++coordinates));
+      expect(x, equals(++coordinates));
+      expect(y, equals(++coordinates));
+      expect(z, equals(++coordinates));
       expect(3 <= ++calls && calls <= 4 || 9 <= calls && calls <= 10,
           equals(true));
     }, lineEnd: () {
@@ -239,11 +239,11 @@ void main() {
 
   test("geoStream(Feature) ↦ .*", () {
     var calls = 0, coordinates = 0;
-    GeoStream(point: (p) {
+    GeoStream(point: (x, y, [z]) {
       //expect(arguments.length, equals(3));
-      expect(p[0], equals(++coordinates));
-      expect(p[1], equals(++coordinates));
-      expect(p[2], equals(++coordinates));
+      expect(x, equals(++coordinates));
+      expect(y, equals(++coordinates));
+      expect(z, equals(++coordinates));
       expect(++calls, equals(1));
     })({
       "type": "Feature",
@@ -257,11 +257,11 @@ void main() {
 
   test("geoStream(FeatureCollection) ↦ .*", () {
     var calls = 0, coordinates = 0;
-    GeoStream(point: (p) {
+    GeoStream(point: (x, y, [z]) {
       //expect(arguments.length, equals(3));
-      expect(p[0], equals(++coordinates));
-      expect(p[1], equals(++coordinates));
-      expect(p[2], equals(++coordinates));
+      expect(x, equals(++coordinates));
+      expect(y, equals(++coordinates));
+      expect(z, equals(++coordinates));
       expect(++calls, equals(1));
     })({
       "type": "FeatureCollection",
@@ -280,11 +280,11 @@ void main() {
 
   test("geoStream(GeometryCollection) ↦ .*", () {
     var calls = 0, coordinates = 0;
-    GeoStream(point: (p) {
+    GeoStream(point: (x, y, [z]) {
       //expect(arguments.length, equals(3));
-      expect(p[0], equals(++coordinates));
-      expect(p[1], equals(++coordinates));
-      expect(p[2], equals(++coordinates));
+      expect(x, equals(++coordinates));
+      expect(y, equals(++coordinates));
+      expect(z, equals(++coordinates));
       expect(++calls, equals(1));
     })({
       "type": "GeometryCollection",

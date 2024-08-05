@@ -12,11 +12,13 @@ final equirectangular = geoEquirectangular()
   ..precision = 0;
 
 List<Map>? testPath(GeoProjection? projection, Map object) {
-  final context = testContext();
+  final context = TestContext();
 
-  return (GeoPath()
+  (GeoPath()
     ..transform = projection
-    ..context = context)(object) as List<Map>;
+    ..context = context)(object);
+
+  return context.result();
 }
 
 void main() {
@@ -37,7 +39,7 @@ void main() {
 
   test("geoPath(projection, context) sets the initial projection and context",
       () {
-    final context = testContext(),
+    final context = TestContext(),
         projection = geoAlbers(),
         path = GeoPath(projection, context);
     expect(path.transform, equals(projection));
@@ -266,12 +268,17 @@ void main() {
   test(
       "geoPath(LineString) then geoPath(Point) does not treat the point as part of a line",
       () {
-    final context = testContext(),
+    final context = TestContext(),
         path = GeoPath()
           ..transform = equirectangular
           ..context = context;
+    List<Map> testPath(Map object) {
+      path(object);
+      return context.result();
+    }
+
     expect(
-        path({
+        testPath({
           "type": "LineString",
           "coordinates": [
             [-63, 18],
@@ -285,7 +292,7 @@ void main() {
           {"type": "lineTo", "x": 170, "y": 165}
         ]));
     expect(
-        path({
+        testPath({
           "type": "Point",
           "coordinates": [-63, 18]
         }),

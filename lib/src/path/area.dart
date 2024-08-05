@@ -5,7 +5,7 @@ import '../noop.dart';
 import '../stream.dart';
 
 var _areaSum = Adder(), _areaRingSum = Adder();
-late List<num> _p00, _p0;
+late num _x00, _y00, _x0, _y0;
 
 GeoStream _stream = GeoStream(
   polygonStart: () {
@@ -23,18 +23,20 @@ void _areaRingStart() {
   _stream.point = _areaPointFirst;
 }
 
-void _areaPointFirst(List<num> p) {
+void _areaPointFirst(num x, num y, [_]) {
   _stream.point = _areaPoint;
-  _p00 = _p0 = p;
+  _x00 = _x0 = x;
+  _y00 = _y0 = y;
 }
 
-void _areaPoint(List<num> p) {
-  _areaRingSum.add((_p0[1] * p[0] - _p0[0] * p[1]).toDouble());
-  _p0 = p;
+void _areaPoint(num x, num y, [_]) {
+  _areaRingSum.add((_y0 * x - _x0 * y).toDouble());
+  _x0 = x;
+  _y0 = y;
 }
 
 void _areaRingEnd() {
-  _areaPoint(_p00);
+  _areaPoint(_x00, _y00);
 }
 
 double area(Map object, [GeoStream Function(GeoStream) transform = identity]) {

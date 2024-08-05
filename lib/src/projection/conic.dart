@@ -1,23 +1,25 @@
 import '../math.dart';
-import '../raw.dart';
+import 'raw.dart';
 import 'projection.dart';
 
 /// Conic projections project the sphere onto a cone, and then unroll the cone
 /// onto the plane.
 ///
 /// Conic projections have two standard parallels.
+///
+/// {@category Projections}
+/// {@category Conic projections}
 class GeoConicProjection extends GeoProjection {
   late GeoProjectionMutator _m;
   double _phi0, _phi1;
 
   GeoConicProjection._(
-      GeoRawTransform Function(List<double>) projectAt, this._phi0, this._phi1)
+      GeoRawProjection Function([List?]) projectAt, this._phi0, this._phi1)
       : super(projectAt([_phi0, _phi1])) {
-    _m = GeoProjectionMutator<List<double>>(projectAt, this);
+    _m = GeoProjectionMutator(projectAt, this);
   }
 
-  factory GeoConicProjection(
-          GeoRawTransform Function(List<double>) projectAt) =>
+  factory GeoConicProjection(GeoRawProjection Function([List?]) projectAt) =>
       GeoConicProjection._(projectAt, 0, pi / 3);
 
   /// The

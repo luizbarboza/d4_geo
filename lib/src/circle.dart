@@ -21,7 +21,7 @@ void circleStream(GeoStream stream, double radius, double delta, int direction,
   List<double> point;
   for (var t = u0; direction > 0 ? t > u1 : t < u1; t -= step) {
     point = spherical([cosRadius, -sinRadius * cos(t), -sinRadius * sin(t)]);
-    stream.point(point);
+    stream.point(point[0], point[1]);
   }
 }
 
@@ -35,6 +35,8 @@ double circleRadius(double cosRadius, List<num> point) {
 }
 
 /// A geometry geographic generator for creating circles.
+///
+/// {@category Spherical shapes}
 class GeoCircle {
   /// The circle center point in degrees.
   ///
@@ -56,7 +58,7 @@ class GeoCircle {
   double precision;
   late GeoStream _stream;
   List<List<num>>? _ring;
-  List<num> Function(List<num>)? _rotate;
+  List<num>? Function(num, num, [num?])? _rotate;
 
   /// Creates a new circle generator.
   GeoCircle(
@@ -64,8 +66,9 @@ class GeoCircle {
     _stream = GeoStream(point: _point);
   }
 
-  void _point(List<num> p) {
-    _ring!.add(p = _rotate!(p));
+  void _point(num x, num y, [_]) {
+    List<num> p;
+    _ring!.add(p = _rotate!(x, y)!);
     p[0] *= degrees;
     p[1] *= degrees;
   }
@@ -75,8 +78,7 @@ class GeoCircle {
   /// [precision].
   Map call() {
     _ring = [];
-    _rotate =
-        rotateRadians(-center[0] * radians, -center[1] * radians, 0).backward!;
+    _rotate = rotateRadians(-center[0] * radians, -center[1] * radians, 0).$2;
     circleStream(_stream, radius * radians, precision * radians, 1);
     var m = {
       "type": "Polygon",
